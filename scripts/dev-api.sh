@@ -62,4 +62,14 @@ echo ""
 # stored inline in GOOGLE_APPLICATION_CREDENTIALS_JSON (set in .env or .zshrc)
 unset GOOGLE_APPLICATION_CREDENTIALS
 
+# Release port 3000 if still held by a previous dev process
+PORT="${PORT:-3000}"
+if lsof -ti :"$PORT" &>/dev/null; then
+  echo "[dev] Port $PORT in use — releasing..."
+  lsof -ti :"$PORT" | xargs kill -SIGTERM 2>/dev/null || true
+  sleep 0.8
+  # Force-kill any survivors
+  lsof -ti :"$PORT" | xargs kill -SIGKILL 2>/dev/null || true
+fi
+
 exec node_modules/.bin/tsx packages/agent-backend/src/index.ts
