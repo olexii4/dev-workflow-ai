@@ -1,0 +1,240 @@
+schemaVersion: 2.2.2
+metadata:
+  name: dev-workflow-ai
+  generateName: dev-workflow-ai-
+  description: Autonomous AI software engineer for Eclipse Che — issue→PR→review→fix loop
+
+components:
+  - name: tools
+    container:
+      image: quay.io/oorel/dev-workflow-ai:latest
+      args: ["tail", "-f", "/dev/null"]
+      memoryLimit: 4G
+      memoryRequest: 512Mi
+      cpuRequest: 1000m
+      cpuLimit: 4000m
+      mountSources: true
+      endpoints:
+        - exposure: public
+          name: app
+          protocol: https
+          targetPort: 3000
+          path: /
+        - exposure: public
+          name: vite-dev
+          protocol: https
+          targetPort: 5173
+          path: /
+      env:
+        - name: DATABASE_URL
+          value: "postgres://agent:agent@localhost:5432/devworkflow"
+        - name: KNOWLEDGE_DIR
+          value: "${PROJECT_SOURCE}/pg_seed/eclipse-che"
+        # Persistent repo clone directory — /projects/repos/ survives pod restarts (PVC-backed).
+        # Repos are cloned here on first agent run; subsequent runs reuse the clone.
+        - name: REPOS_DIR
+          value: "/projects/repos"
+        # External Ollama on your intranet — leave empty to use Vertex AI / Claude API
+        - name: OLLAMA_BASE_URL
+          value: ""
+        - name: OLLAMA_MODEL
+          value: "qwen2.5-coder:7b"
+        # Credentials are injected automatically by the DevWorkspace Operator when
+        # the 'dev-workflow-ai-secrets' Secret exists in the workspace namespace with:
+        #   label   controller.devfile.io/mount-to-devworkspace: "true"
+        #   annotation controller.devfile.io/mount-as: env
+        # Create the secret once with: ./run/create-ocp-secret.sh
+        - name: GITHUB_TOKEN
+          value: ""
+        - name: ANTHROPIC_VERTEX_PROJECT_ID
+          value: ""
+        - name: CLOUD_ML_REGION
+          value: ""
+        - name: VERTEX_CLAUDE_MODEL
+          value: ""
+        - name: GOOGLE_APPLICATION_CREDENTIALS_JSON
+          value: ""
+        - name: ANTHROPIC_API_KEY
+          value: ""
+        - name: GEMINI_API_KEY
+          value: ""
+
+  - name: postgres
+    container:
+      image: docker.io/postgres:16-alpine
+      memoryLimit: 512Mi
+      memoryRequest: 64Mi
+      env:
+        - name: POSTGRES_DB
+          value: devworkflow
+        - name: POSTGRES_USER
+          value: agent
+        - name: POSTGRES_PASSWORD
+          value: agent
+        # OpenShift runs containers as a random non-root UID (e.g. 1000660000).
+        # The default PGDATA (/var/lib/postgresql/data) is owned by UID 70 (postgres user)
+        # with mode 700, so the assigned UID cannot chown it.
+        # Redirect to /tmp/pgdata which the container can create and own.
+        - name: PGDATA
+          value: /tmp/pgdata
+      endpoints:
+        - exposure: internal
+          name: postgres
+          protocol: tcp
+          targetPort: 5432
+
+commands:
+  - id: install
+    exec:
+      label: "[DWA] install dependencies"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn install"
+      group:
+        kind: build
+        isDefault: true
+
+  - id: build
+    exec:
+      label: "[DWA] build (UI + backend)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "./build/build.sh"
+      group:
+        kind: build
+
+  - id: build-ui
+    exec:
+      label: "[DWA] build UI only"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn build:ui"
+      group:
+        kind: build
+
+  - id: build-api
+    exec:
+      label: "[DWA] build API only (webpack)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn build:dev"
+      group:
+        kind: build
+
+  - id: init-db
+    exec:
+      label: "[DWA] init database + import knowledge"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "npx tsx scripts/init-db.ts"
+      group:
+        kind: build
+
+  - id: start-api
+    exec:
+      label: "[DWA] start API (dev mode)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn dev:api"
+      group:
+        kind: run
+        isDefault: true
+
+  - id: start-ui
+    exec:
+      label: "[DWA] start UI dev server"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn dev:ui"
+      group:
+        kind: run
+
+  - id: test
+    exec:
+      label: "[DWA] run tests"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn test"
+      group:
+        kind: test
+        isDefault: true
+
+  - id: lint
+    exec:
+      label: "[DWA] lint"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn lint"
+      group:
+        kind: test
+
+  - id: typecheck
+    exec:
+      label: "[DWA] typecheck"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn typecheck"
+      group:
+        kind: test
+
+  - id: run-issue
+    exec:
+      label: "[DWA] run agent on issue (dry-run)"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "echo 'Usage: npx tsx scripts/run-issue-direct.ts <github-issue-url>'"
+      group:
+        kind: run
+
+  - id: clone-repos
+    exec:
+      label: "[DWA] pre-clone all Eclipse Che subproject repos"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: |
+        set -e
+        REPOS_DIR="${REPOS_DIR:-/projects/repos}"
+        TOKEN="${GITHUB_TOKEN:-}"
+        auth() { [[ -n "$TOKEN" ]] && echo "https://${TOKEN}@github.com/$1.git" || echo "https://github.com/$1.git"; }
+        clone_or_pull() {
+          local slug="$1" owner="${1%%/*}" repo="${1##*/}"
+          local dir="$REPOS_DIR/$owner/$repo"
+          mkdir -p "$REPOS_DIR/$owner"
+          if [[ -d "$dir/.git" ]]; then
+            echo "↑ pulling $slug"; git -C "$dir" fetch && git -C "$dir" checkout main && git -C "$dir" pull -p || true
+          else
+            echo "⬇ cloning $slug"; git clone --depth=50 "$(auth $slug)" "$dir"
+          fi
+        }
+        clone_or_pull eclipse-che/che-dashboard
+        clone_or_pull eclipse-che/che-server
+        clone_or_pull eclipse-che/che-docs
+        clone_or_pull eclipse-che/che
+        clone_or_pull devfile/devworkspace-operator
+        clone_or_pull che-incubator/devworkspace-generator
+        clone_or_pull che-incubator/che-ai-tool-images
+        clone_or_pull che-incubator/dash-licenses
+        echo "✓ All repos ready in $REPOS_DIR"
+
+  - id: install-claude-code
+    exec:
+      label: "[DWA] install Claude Code CLI"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "npm install -g @anthropic-ai/claude-code"
+
+  - id: install-gemini-cli
+    exec:
+      label: "[DWA] install Gemini CLI"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "npm install -g @google/gemini-cli"
+
+  - id: license-generate
+    exec:
+      label: "[DWA] generate license files"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "yarn license:generate"
+      group:
+        kind: build
