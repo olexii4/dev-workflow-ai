@@ -1,8 +1,8 @@
 # dev-workflow-ai
 
-**Autonomous AI software engineer built for Eclipse Che** — automates the full issue→implement→PR→review cycle across any GitHub project, running as a Cloud Development Environments (CDEs) workspace on OpenShift.
+**Autonomous AI software engineer built for Eclipse Che** — automates the full issue→implement→review→PR cycle across any GitHub project, running as a Cloud Development Environments (CDEs) workspace on OpenShift.
 
-Point it at any issue, and the Eclipse Che CDE will pick it up, implement a fix, open a pull request, review the code, and iterate on feedback — unattended.
+Point it at any issue, and the Eclipse Che CDE will pick it up, implement a fix, review the code on the local branch, and open a pull request — unattended. Review runs **before** the PR is opened, so only clean code is published.
 
 This project was built specifically to work on Eclipse Che's own subprojects. A complete knowledge pack for the Eclipse Che ecosystem ([che-dashboard](https://github.com/eclipse-che/che-dashboard), [che-server](https://github.com/eclipse-che/che-server), [devworkspace-operator](https://github.com/devfile/devworkspace-operator), [devworkspace-generator](https://github.com/che-incubator/devworkspace-generator), [che-ai-tool-images](https://github.com/che-incubator/che-ai-tool-images), [dash-licenses](https://github.com/che-incubator/dash-licenses), [che-docs](https://github.com/eclipse-che/che-docs)) is bundled in `pg_seed/eclipse-che/`.
 
@@ -18,7 +18,7 @@ https://<your-che-host>/f?url=https://github.com/olexii4/dev-workflow-ai
 
 Eclipse Che reads the `devfile.yaml` at the repository root, provisions two containers (the pre-built app image `quay.io/oorel/dev-workflow-ai:latest` and a Postgres sidecar), clones the project, and exposes the agent UI at port 3000.
 
-The workspace image has the Node.js API, Vite UI, and AI CLI tools (Claude Code, OpenCode, Gemini CLI) pre-built inside — no `yarn install` or `yarn build` needed. On workspace start, the server waits for Postgres to be ready, then starts automatically.
+The workspace image has the Node.js API, webpack UI, and AI CLI tools (Claude Code, OpenCode, Gemini CLI) pre-built inside — no `yarn install` or `yarn build` needed. On workspace start, the server waits for Postgres to be ready, then starts automatically.
 
 Once the workspace is open, run the following commands in order:
 
@@ -99,13 +99,14 @@ The agent then:
 2. Analyzes affected files using the project context from PostgreSQL
 3. Implements the fix on a new branch using Claude/Gemini/Ollama
 4. Runs tests and lint; retries up to 3× on failure
-5. Opens a pull request (draft if checks did not pass locally)
-6. Reviews the diff — Tier 1 always, Tier 2 on trigger conditions
-7. Posts findings to the PR and iterates on blocking issues
+5. Reviews the local branch diff with 5 parallel reviewers (correctness, silent failures, test coverage, conventions, TypeScript types)
+6. Applies fix-feedback if blocking issues are found, then re-reviews
+7. Opens a pull request once the review is clean; deletes the local branch after PR is created
+8. Posts findings to the PR if any non-blocking issues remain
 
 ### 3. Monitor live
 
-The **Run Detail** page streams every phase in real time via WebSocket — pick-issue → analyze → priority-check → implement → open-PR → review.
+The **Run Detail** page streams every phase in real time via WebSocket — pick-issue → analyze → priority-check → implement → review → open-PR.
 
 ---
 
@@ -239,8 +240,7 @@ yarn dev:api   # API at http://localhost:3000 (hot-reload, PGlite, knowledge aut
 
 In a second terminal:
 ```bash
-export VITE_API_URL=http://localhost:3000
-yarn dev:ui    # UI at http://localhost:5173, proxies to :3000
+yarn dev:ui    # UI at http://localhost:5173, proxies /api and /ws to :3000
 ```
 
 Dry-run output when `GITHUB_TOKEN` is not set:
@@ -281,15 +281,16 @@ yarn dev:api
 
 - **LangGraph.js** — stateful, resumable agent graph (TypeScript)
 - **Claude / Gemini / Ollama** — LLM backends (external Ollama supported via `OLLAMA_BASE_URL`)
-- **React + PatternFly 6** — web UI (dashboard, issue browser, live run view)
-- **Fastify** — REST API + WebSocket
+- **React + PatternFly 6** — web UI (dashboard, issue browser, live run view); webpack build, CSS modules
+- **Redux Toolkit** — state management (Runs, Projects slices; `createAsyncThunk` + TTL caching)
+- **Fastify** — REST API + WebSocket; Swagger UI at `/api/swagger`
 - **PostgreSQL / PGlite** — persistent state (agent checkpoints, run history, project contexts); PGlite (Postgres-in-WASM) used automatically when `DATABASE_URL` is unset
 - **Eclipse Che / OpenShift** — CDE platform, OpenShift OAuth via gateway
 
 ## Build
 
 ```bash
-./build/build.sh                  # UI (Vite) + API (webpack)
+./build/build.sh                  # UI (webpack) + API (webpack)
 ./build/build.sh --multiarch      # build and push app image (amd64 + arm64) → quay.io/<org>/dev-workflow-ai
 ./build/build.sh --postgres-image # build OpenShift-compatible postgres sidecar image
 ./build/build.sh --workspace-image # build single-container image (UBI9/Node.js 20 + postgres bundled)
