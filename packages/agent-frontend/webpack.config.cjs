@@ -86,6 +86,7 @@ module.exports = (env, argv) => {
               options: {
                 modules: {
                   auto: true,
+                  namedExport: false,
                   localIdentName: isProd ? '[local]_[hash:8]' : '[path][name]__[local]',
                 },
               },
