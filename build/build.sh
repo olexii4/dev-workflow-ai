@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./build/build.sh                  # build UI + API (webpack)
-#   ./build/build.sh --ui-only        # build UI only (Vite)
+#   ./build/build.sh --ui-only        # build UI only (webpack)
 #   ./build/build.sh --api-only       # build API only (webpack)
 #   ./build/build.sh --multiarch           # build and push multi-arch app image
 #   ./build/build.sh --postgres-image      # build OpenShift-compatible postgres sidecar image
@@ -33,79 +33,15 @@ cd "$ROOT"
 # ── Local builds ────────────────────────────────────────────────────────────
 
 build_ui() {
-  echo "[build] Building UI (Vite)..."
-  yarn build:ui
+  echo "[build] Building UI (webpack)..."
+  yarn workspace @dev-workflow-ai/agent-frontend build
   echo "[build] ✓ UI built → dist/"
 }
 
 build_api() {
   echo "[build] Building API (webpack)..."
-  yarn build
-  echo "[build] ✓ API built → dist/server/index.js"
-}
-
-# ── Multi-arch Docker image ──────────────────────────────────────────────────
-
-build_multiarch() {
-  if [[ -z "$IMAGE_REGISTRY_HOST" ]]; then
-    echo "[ERROR] IMAGE_REGISTRY_HOST is not set."
-    echo "        Example: export IMAGE_REGISTRY_HOST=quay.io"
-    exit 1
-  fi
-  if [[ -z "$IMAGE_REGISTRY_USER_NAME" ]]; then
-    echo "[ERROR] IMAGE_REGISTRY_USER_NAME is not set."
-    echo "        Example: export IMAGE_REGISTRY_USER_NAME=your-username"
-    exit 1
-  fi
-
-  if [[ -z "$IMAGE_TAG" ]]; then
-    IMAGE_TAG=$(git branch --show-current)'_'$(date '+%Y_%m_%d_%H_%M_%S')
-  fi
-
-  IMAGE="${IMAGE_REGISTRY_HOST}/${IMAGE_REGISTRY_USER_NAME}/dev-workflow-ai:${IMAGE_TAG}"
-  PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
-  DOCKERFILE="build/dockerfiles/Dockerfile"
-
-  echo "[INFO] Target image:  ${IMAGE}"
-  echo "[INFO] Platforms:     ${PLATFORMS}"
-  echo "[INFO] Dockerfile:    ${DOCKERFILE}"
-  echo ""
-
-  if command -v docker &>/dev/null; then
-    echo "[INFO] Using Docker buildx..."
-    if ! docker buildx ls | grep -q "dwa-multiarch-builder"; then
-      echo "[INFO] Creating dwa-multiarch-builder..."
-      docker buildx create --name dwa-multiarch-builder --use --platform "${PLATFORMS}"
-    else
-      docker buildx use dwa-multiarch-builder
-    fi
-    docker buildx inspect --bootstrap
-    docker buildx build . \
-      -f "${DOCKERFILE}" \
-      --platform "${PLATFORMS}" \
-      -t "${IMAGE}" \
-      --push
-
-  elif command -v podman &>/dev/null; then
-    echo "[INFO] Using Podman..."
-    podman manifest create "${IMAGE}" || true
-    IFS=',' read -ra PLATFORM_ARRAY <<< "$PLATFORMS"
-    for PLATFORM in "${PLATFORM_ARRAY[@]}"; do
-      echo "[INFO] Building for ${PLATFORM}..."
-      podman build . -f "${DOCKERFILE}" --platform "${PLATFORM}" --manifest "${IMAGE}"
-    done
-    podman manifest push "${IMAGE}" "docker://${IMAGE}"
-
-  else
-    echo "[ERROR] Neither Docker nor Podman found."
-    exit 1
-  fi
-
-  echo ""
-  echo "[SUCCESS] Image pushed: ${IMAGE}"
-  echo ""
-  echo "To verify:"
-  echo "  docker buildx imagetools inspect ${IMAGE}"
+  yarn workspace @dev-workflow-ai/agent-backend build
+  echo "[build] ✓ API built → packages/agent-backend/lib/"
 }
 
 # ── Container image builder (shared logic) ───────────────────────────────────
@@ -119,6 +55,8 @@ build_image() {
 
   if [[ -z "${IMAGE_REGISTRY_HOST:-}" || -z "${IMAGE_REGISTRY_USER_NAME:-}" ]]; then
     echo "[ERROR] IMAGE_REGISTRY_HOST and IMAGE_REGISTRY_USER_NAME must be set."
+    echo "        Example: export IMAGE_REGISTRY_HOST=quay.io"
+    echo "        Example: export IMAGE_REGISTRY_USER_NAME=your-username"
     exit 1
   fi
 
@@ -156,6 +94,9 @@ build_image() {
 
   echo ""
   echo "[build] ✓ Pushed: $image"
+  echo ""
+  echo "To verify:"
+  echo "  docker buildx imagetools inspect $image"
 }
 
 # ── Dispatch ────────────────────────────────────────────────────────────────
@@ -169,7 +110,7 @@ case "${1:-all}" in
     ;;
   --multiarch)
     # Main app image: API + UI + AI tool binaries
-    build_multiarch
+    build_image "dev-workflow-ai" "build/dockerfiles/Dockerfile"
     ;;
   --postgres-image)
     # OpenShift-compatible postgres sidecar (postgres:16-alpine + PGDATA=/tmp/pgdata)
@@ -177,7 +118,7 @@ case "${1:-all}" in
     build_image "dev-workflow-ai-postgres" "build/dockerfiles/postgres-openshift.Dockerfile"
     echo ""
     echo "Update devfile.yaml: change postgres container image to:"
-    echo "  image: ${IMAGE_REGISTRY_HOST:-quay.io}/${IMAGE_REGISTRY_USER_NAME:-youruser}/dev-workflow-ai-postgres:latest"
+    echo "  image: ${IMAGE_REGISTRY_HOST:-<registry>}/${IMAGE_REGISTRY_USER_NAME:-<org>}/dev-workflow-ai-postgres:latest"
     ;;
   --workspace-image)
     # Single-container image: UDI + postgres bundled (no sidecar needed)
@@ -187,7 +128,7 @@ case "${1:-all}" in
     echo "Update devfile.yaml: replace 'tools' + 'postgres' components with:"
     echo "  - name: workspace"
     echo "    container:"
-    echo "      image: ${IMAGE_REGISTRY_HOST:-quay.io}/${IMAGE_REGISTRY_USER_NAME:-youruser}/dev-workflow-ai-workspace:latest"
+    echo "      image: ${IMAGE_REGISTRY_HOST:-<registry>}/${IMAGE_REGISTRY_USER_NAME:-<org>}/dev-workflow-ai-workspace:latest"
     echo "      memoryLimit: 6G"
     echo "      env:"
     echo "        - name: DATABASE_URL"

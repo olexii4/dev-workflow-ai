@@ -9,7 +9,7 @@ This document covers building container images for dev-workflow-ai, the choices 
 | Layer | Contents |
 |---|---|
 | **API** | Fastify + LangGraph agent (`packages/agent-backend/lib/`) built by webpack |
-| **UI** | React + PatternFly 6 app (`dist/`) built by Vite |
+| **UI** | React + PatternFly 6 app (`dist/`) built by webpack |
 | **Claude Code** | `claude` binary (direct download from Google Storage) |
 | **OpenCode** | `opencode` binary (GitHub releases) |
 | **Gemini CLI** | `@google/gemini-cli` installed via npm |
@@ -38,12 +38,12 @@ Alternative runtime bases are documented in `build/dockerfiles/Dockerfile.altern
 # Podman (preferred on RHEL/Fedora/CRC) or Docker
 podman --version   # 4.x+
 
-# Authenticated to quay.io
-podman login quay.io -u oorel
+# Authenticate to your container registry
+podman login <registry-host>
 
 # Environment variables
-export IMAGE_REGISTRY_HOST=quay.io
-export IMAGE_REGISTRY_USER_NAME=oorel
+export IMAGE_REGISTRY_HOST=<registry-host>   # e.g. quay.io, ghcr.io
+export IMAGE_REGISTRY_USER_NAME=<your-username-or-org>
 ```
 
 ---
@@ -59,11 +59,11 @@ export IMAGE_REGISTRY_USER_NAME=oorel
 # Build locally for the current platform only (faster, no push)
 podman build \
   -f build/dockerfiles/Dockerfile \
-  -t quay.io/oorel/dev-workflow-ai:latest \
+  -t ${IMAGE_REGISTRY_HOST}/${IMAGE_REGISTRY_USER_NAME}/dev-workflow-ai:latest \
   .
 ```
 
-Output image: `quay.io/oorel/dev-workflow-ai:<branch>_<timestamp>`
+Output image: `<registry>/<org>/dev-workflow-ai:<branch>_<timestamp>`
 
 ### Postgres sidecar image (OpenShift UID fix)
 
@@ -71,7 +71,7 @@ Output image: `quay.io/oorel/dev-workflow-ai:<branch>_<timestamp>`
 ./build/build.sh --postgres-image
 ```
 
-Produces `quay.io/oorel/dev-workflow-ai-postgres:<tag>`.  
+Produces `<registry>/<org>/dev-workflow-ai-postgres:<tag>`.  
 Identical to `postgres:16-alpine` but with `PGDATA=/tmp/pgdata` baked in so it starts cleanly under any OpenShift-assigned UID.
 
 ### Single-container workspace image (UDI + postgres bundled)
@@ -80,7 +80,7 @@ Identical to `postgres:16-alpine` but with `PGDATA=/tmp/pgdata` baked in so it s
 ./build/build.sh --workspace-image
 ```
 
-Produces `quay.io/oorel/dev-workflow-ai-workspace:<tag>`.  
+Produces `<registry>/<org>/dev-workflow-ai-workspace:<tag>`.  
 UDI base with postgresql16 installed and `start-postgres.sh` as the entrypoint — no sidecar needed.
 
 ---
@@ -90,7 +90,7 @@ UDI base with postgresql16 installed and `start-postgres.sh` as the entrypoint �
 Uses a Podman **pod** so the app and postgres share `localhost` — identical to
 how Kubernetes runs sidecars. No docker-compose or external networking required.
 
-### Quick start (pulls pre-built image from quay.io)
+### Quick start (pulls pre-built image from your registry)
 
 ```bash
 # Set at least one LLM key (optional — stub mode works without)
@@ -106,7 +106,7 @@ App is at **http://localhost:3000** | Postgres at **localhost:5433**
 
 ```bash
 ./run/run-local-podman.sh
-# Builds quay.io/oorel/dev-workflow-ai:latest from source, then starts the pod
+# Builds the app image from source, then starts the pod
 ```
 
 ### Equivalent manual `podman run` commands
@@ -133,7 +133,7 @@ podman run -d \
   -e KNOWLEDGE_DIR="/app/pg_seed/eclipse-che" \
   -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
   -e GITHUB_TOKEN="${GITHUB_TOKEN:-}" \
-  quay.io/oorel/dev-workflow-ai:latest
+  ${IMAGE_REGISTRY_HOST}/${IMAGE_REGISTRY_USER_NAME}/dev-workflow-ai:latest
 
 # 4. Check health
 curl http://localhost:3000/healthz
@@ -186,7 +186,7 @@ Change the `image:` line in the `tools` component:
 components:
   - name: tools
     container:
-      image: quay.io/oorel/dev-workflow-ai:latest   # ← update this tag
+      image: <registry>/<org>/dev-workflow-ai:latest   # ← update this tag
 ```
 
 Then restart the DevWorkspace in the Che Dashboard or:
@@ -194,7 +194,7 @@ Then restart the DevWorkspace in the Che Dashboard or:
 ```bash
 oc patch devworkspace dev-workflow-ai -n <namespace> \
   --type=json \
-  -p='[{"op":"replace","path":"/spec/template/components/0/container/image","value":"quay.io/oorel/dev-workflow-ai:latest"}]'
+  -p='[{"op":"replace","path":"/spec/template/components/0/container/image","value":"<registry>/<org>/dev-workflow-ai:latest"}]'
 oc patch devworkspace dev-workflow-ai -n <namespace> \
   --type=merge -p '{"spec":{"started":false}}'
 sleep 3
@@ -282,18 +282,18 @@ Then use `~/redeploy-che.sh` to restart the workspace.
 
 ```bash
 # Verify the image is accessible
-podman pull quay.io/oorel/dev-workflow-ai:latest
+podman pull ${IMAGE_REGISTRY_HOST}/${IMAGE_REGISTRY_USER_NAME}/dev-workflow-ai:latest
 
-# Check quay.io login
-podman login quay.io --get-login
+# Check registry login
+podman login ${IMAGE_REGISTRY_HOST} --get-login
 ```
 
 If the image is private, create an `imagePullSecret` in the workspace namespace:
 
 ```bash
-oc create secret docker-registry quay-pull-secret \
-  --docker-server=quay.io \
-  --docker-username=oorel \
+oc create secret docker-registry registry-pull-secret \
+  --docker-server=${IMAGE_REGISTRY_HOST} \
+  --docker-username=${IMAGE_REGISTRY_USER_NAME} \
   --docker-password=<token> \
   -n <namespace>
 ```

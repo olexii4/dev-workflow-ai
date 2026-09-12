@@ -30,8 +30,8 @@ COPY packages/agent-frontend/package.json ./packages/agent-frontend/package.json
 RUN yarn install
 
 # Copy source and compile:
-#   agent-frontend  → Vite build → dist/
-#   agent-backend   → webpack   → packages/agent-backend/lib/
+#   agent-frontend  → webpack build → dist/
+#   agent-backend   → webpack build → packages/agent-backend/lib/
 COPY packages ./packages
 RUN yarn build
 
