@@ -38,21 +38,20 @@ const execAsync = promisify(exec);
 
 interface DepUpgrade {
   packageName: string;
-  targetVersion: string;
+  targetVersion: string | null; // null = resolve from npm at runtime
 }
 
 function parseDepUpgrade(summary: string): DepUpgrade | null {
-  // Extract version first — "to version 5.12.2" or "to 5.12.2" anywhere in string
-  const versionMatch = summary.match(/\bto\s+(?:version\s+)?[\^~]?([\d]+\.[\d]+\.[\d]+)/i);
-  if (!versionMatch) return null;
-  const targetVersion = versionMatch[1];
-
   // Extract package name — word after "Upgrade" (before " dependency", " in", " to", or end)
   const pkgMatch = summary.match(/upgrad\w+\s+([a-zA-Z0-9@/_-]+)/i);
   if (!pkgMatch) return null;
 
   // Normalize: npm package names are lowercase; strip trailing punctuation
   const packageName = pkgMatch[1].toLowerCase().replace(/[.,;:]+$/, '');
+
+  // Extract version — "to version 5.12.2" or "to 5.12.2" anywhere in string (optional)
+  const versionMatch = summary.match(/\bto\s+(?:version\s+)?[\^~]?([\d]+\.[\d]+\.[\d]+)/i);
+  const targetVersion = versionMatch ? versionMatch[1] : null;
 
   return { packageName, targetVersion };
 }
@@ -90,19 +89,26 @@ async function findPackageJsonWith(repoRoot: string, dep: string): Promise<strin
 // ── Main node ────────────────────────────────────────────────────────────────
 
 export async function implementDepUpgradeNode(state: State): Promise<Partial<State>> {
-  const analysisSummary = state.messages.find(m => m.startsWith('analyze:')) ?? '';
+  // Prefer state.fixSummary (direct field set by analyze); fall back to the log message
+  const analysisSummary =
+    state.fixSummary ??
+    state.issueTitle ??
+    state.messages.find(m => m.startsWith('analyze:')) ??
+    '';
   const upgrade = parseDepUpgrade(analysisSummary);
 
   if (!upgrade) {
     return {
-      messages: ['implement_dep_upgrade: could not parse upgrade from analyze summary — skipping'],
+      messages: ['implement_dep_upgrade: could not parse package name from analyze summary — skipping'],
       testsPassed: false,
       lintPassed: false,
       status: 'failed',
     };
   }
 
-  const { packageName, targetVersion } = upgrade;
+  const { packageName } = upgrade;
+  // If the issue/summary didn't state a target version, resolve latest from npm below
+  let targetVersion = upgrade.targetVersion;
   const config = await loadProjectConfig(state.project);
   const rawPath = config?.local_path ?? state.repoLocal ?? '';
   // Resolve relative paths (e.g. ".repos/...") against the server's cwd
@@ -187,18 +193,32 @@ export async function implementDepUpgradeNode(state: State): Promise<Partial<Sta
     };
   }
 
-  // 2. Check latest patch release on npm
-  let resolvedVersion = targetVersion;
+  // 2. Resolve target version from npm if not stated in the issue/summary
+  let resolvedVersion = targetVersion ?? '';
   try {
     const { stdout } = await execAsync(`npm info ${packageName} version`, { timeout: 10_000 });
     const latest = stdout.trim();
-    const [latestMajor, latestMinor] = latest.split('.').map(Number);
-    const [targetMajor, targetMinor] = targetVersion.split('.').map(Number);
-    // Use latest if it's the same major/minor and newer
-    if (latestMajor === targetMajor && latestMinor >= targetMinor) {
+    if (!targetVersion) {
+      // No explicit version — use the current npm latest
       resolvedVersion = latest;
+    } else {
+      const [latestMajor, latestMinor] = latest.split('.').map(Number);
+      const [targetMajor, targetMinor] = targetVersion.split('.').map(Number);
+      // Use latest if it's the same major/minor and newer patch
+      if (latestMajor === targetMajor && latestMinor >= targetMinor) {
+        resolvedVersion = latest;
+      }
     }
-  } catch { /* use targetVersion */ }
+  } catch {
+    if (!resolvedVersion) {
+      return {
+        messages: [`implement_dep_upgrade: could not resolve version for ${packageName} from npm`],
+        testsPassed: false, lintPassed: false, status: 'failed',
+      };
+    }
+  }
+  // Ensure targetVersion is set for downstream use
+  targetVersion = resolvedVersion;
 
   // 3. Update each package.json
   const changedFiles: string[] = [];
