@@ -1,0 +1,16 @@
+{
+  "name": "@dev-workflow-ai/agent-frontend",
+  "version": "0.2.0",
+  "description": "Workflow AI — React + PatternFly 6 Web UI",
+  "license": "EPL-2.0",
+  "private": true,
+  "scripts": {
+    "build": "../../node_modules/.bin/webpack --config webpack.config.cjs --mode production",
+    "dev": "../../node_modules/.bin/webpack serve --config webpack.config.cjs --mode development",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
+    "format:fix": "prettier --write 'src/**/*.{ts,tsx,css}'",
+    "lint:check": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "test": "vitest run --project frontend"
+  }
+}

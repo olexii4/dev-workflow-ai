@@ -1,0 +1,64 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login > renders correctly and matches snapshot 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-v6-c-page__main-section"
+    style="min-height: 100vh;"
+  >
+    <div
+      class="pf-v6-c-page__main-body"
+    >
+      <div
+        class="pf-v6-l-bullseye"
+      >
+        <div
+          class="pf-v6-c-empty-state"
+        >
+          <div
+            class="pf-v6-c-empty-state__content"
+          >
+            <div
+              class="pf-v6-c-empty-state__header"
+            >
+              <div
+                class="pf-v6-c-empty-state__icon"
+              >
+                <svg
+                  aria-label="Connecting"
+                  aria-valuetext="Loading..."
+                  class="pf-v6-c-spinner pf-m-xl"
+                  role="progressbar"
+                  viewBox="0 0 100 100"
+                >
+                  <circle
+                    class="pf-v6-c-spinner__path"
+                    cx="50"
+                    cy="50"
+                    fill="none"
+                    r="45"
+                  />
+                </svg>
+              </div>
+              <div
+                class="pf-v6-c-empty-state__title"
+              >
+                <h1
+                  class="pf-v6-c-empty-state__title-text"
+                >
+                  Connecting to Workflow AI
+                </h1>
+              </div>
+            </div>
+            <div
+              class="pf-v6-c-empty-state__body"
+            >
+              Redirecting to OpenShift login…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</DocumentFragment>
+`;

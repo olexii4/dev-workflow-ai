@@ -1,0 +1,20 @@
+{
+  "name": "Workflow AI",
+  "productVersion": "0.2.0",
+  "productVersionSuffix": "",
+  "logoTextFile": "branding/logo-text.svg",
+  "logoFile": "branding/icon.png",
+  "favicon": "branding/favicon.png",
+  "title": "Workflow AI — Autonomous AI Software Engineer",
+  "description": "Autonomous AI software engineer — automates the issue→PR→review→fix loop across any GitHub project.",
+  "links": [
+    {
+      "text": "Documentation",
+      "href": "https://github.com/olexii4/dev-workflow-ai/blob/main/README.md"
+    },
+    {
+      "text": "Open WebUI",
+      "href": "http://localhost:8080"
+    }
+  ]
+}

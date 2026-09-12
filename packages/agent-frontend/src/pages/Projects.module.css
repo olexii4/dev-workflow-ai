@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2026 Red Hat, Inc.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   Red Hat, Inc. - initial API and implementation
+ */
+
+.filterRow {
+  margin-bottom: var(--pf-t--global--spacer--md);
+}
+
+.filterInput {
+  max-width: 280px;
+}
+
+.itemCount {
+  font-size: 0.85rem;
+  color: var(--pf-t--global--text--color--subtle);
+  white-space: nowrap;
+}
+
+.gallery {
+  margin-top: var(--pf-t--global--spacer--sm);
+}
+
+.projectCard {
+  border: var(--pf-v6-c-card--BorderWidth) var(--pf-v6-c-card--BorderStyle)
+    var(--pf-t--global--border--color--default);
+  height: 100%;
+}
+
+/* GitHub org avatar or fallback icon */
+.projectIcon {
+  border-radius: 8px;
+  flex-shrink: 0;
+  color: var(--pf-t--global--icon--color--subtle);
+  object-fit: cover;
+}
+
+html.pf-v6-theme-dark .projectIcon {
+  background-color: var(--pf-t--color--gray--10);
+}
+
+.projectSlug {
+  margin-top: var(--pf-t--global--spacer--200);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Stack badges row — new line below repo link */
+.stackRow {
+  margin-top: var(--pf-t--global--spacer--xs);
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.stackBadge {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.repoLink {
+  display: block;
+  margin-top: var(--pf-t--global--spacer--200);
+  font-size: 0.85rem;
+  color: var(--pf-t--global--text--color--link--default);
+}
+
+.description {
+  margin: var(--pf-t--global--spacer--xs) 0 0;
+  font-size: 0.9rem;
+}
+
+.meta {
+  margin-top: var(--pf-t--global--spacer--xs);
+  font-size: 0.8rem;
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+.metaRow {
+  margin-top: var(--pf-t--global--spacer--200);
+  font-size: 0.8rem;
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+.metaLabel {
+  color: var(--pf-t--global--text--color--subtle);
+  font-weight: 500;
+}
+
+.metaDash {
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+.localPath {
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+
+.deleteBtn {
+  color: var(--pf-t--global--color--status--danger--default);
+}
+
+/* Form inputs */
+.shortInput {
+  max-width: 240px;
+}
+
+/* Colored dot in priority selector */
+.priorityDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
