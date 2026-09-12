@@ -178,6 +178,7 @@ export default function DashboardPage({ runs, loading, onNavigate, onCancelRun, 
               <ToolbarContent>
                 <ToolbarItem>
                   <SearchInput
+                    id="dashboard-filter"
                     placeholder="Filter by"
                     value={filter}
                     onChange={(_e, v) => setFilter(v)}
@@ -187,7 +188,7 @@ export default function DashboardPage({ runs, loading, onNavigate, onCancelRun, 
                   />
                 </ToolbarItem>
                 <ToolbarItem>
-                  <Button variant="plain" isDanger isDisabled={selectedIds.size === 0 || deleting}
+                  <Button id="dashboard-bulk-delete" variant="plain" isDanger isDisabled={selectedIds.size === 0 || deleting}
                     onClick={handleBulkDelete} aria-label="Delete selected runs">
                     <TrashIcon />
                     {selectedIds.size > 0 && <>&nbsp;Delete ({selectedIds.size})</>}
@@ -207,7 +208,7 @@ export default function DashboardPage({ runs, loading, onNavigate, onCancelRun, 
                 </EmptyStateBody>
               </EmptyState>
             ) : (
-              <Table aria-label="Runs" variant="compact" className={styles.runsTable}>
+              <Table id="runs-table" aria-label="Runs" variant="compact" className={styles.runsTable}>
                 <Thead>
                   <Tr>
                     <Th select={{ onSelect: (_e, c) => handleSelectAll(c), isSelected: allSelected }} />
@@ -225,7 +226,7 @@ export default function DashboardPage({ runs, loading, onNavigate, onCancelRun, 
                     const ref = issueRef(run);
                     const isRunning = run.status === 'running';
                     return (
-                      <Tr key={run.thread_id} style={{ cursor: 'pointer' }}
+                      <Tr key={run.thread_id} id={`run-row-${shortId(run.thread_id)}`} style={{ cursor: 'pointer' }}
                         onClick={() => onNavigate(`/runs/${run.thread_id}`)}>
                         <Td select={{ rowIndex, onSelect: (_e, c) => handleSelectOne(run.thread_id, c), isSelected: selectedIds.has(run.thread_id) }}
                           onClick={e => e.stopPropagation()} />
@@ -244,7 +245,7 @@ export default function DashboardPage({ runs, loading, onNavigate, onCancelRun, 
                             isOpen={openKebab === run.thread_id}
                             onOpenChange={o => setOpenKebab(o ? run.thread_id : null)}
                             toggle={(ref: React.Ref<HTMLButtonElement>) => (
-                              <MenuToggle ref={ref} variant="plain" className={styles.kebabToggle}
+                              <MenuToggle ref={ref} id={`run-kebab-${shortId(run.thread_id)}`} variant="plain" className={styles.kebabToggle}
                                 aria-label={`Actions for ${shortId(run.thread_id)}`}
                                 onClick={() => setOpenKebab(openKebab === run.thread_id ? null : run.thread_id)}
                                 isExpanded={openKebab === run.thread_id}>

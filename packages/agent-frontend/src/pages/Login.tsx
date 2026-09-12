@@ -17,11 +17,11 @@ import { useBranding } from '../contexts/BrandingContext.js';
 // When deployed in Eclipse Che, the oauth-proxy gateway intercepts unauthenticated
 // requests before they reach the app and redirects the user to OpenShift OAuth
 // automatically. This page should never be visible in production — it only appears
-// in dev mode (no gateway) where /api/auth/me returns a synthetic dev user.
+// in dev mode (no gateway) where /api/preferences/user returns a synthetic dev user.
 export default function Login() {
   const branding = useBranding();
 
-  // Trigger /api/auth/me again — in dev mode it resolves immediately and the
+  // Trigger /api/preferences/user again — in dev mode it resolves immediately and the
   // AuthContext will populate, removing this page from view.
   useEffect(() => {
     window.location.href = '/api/auth/login';

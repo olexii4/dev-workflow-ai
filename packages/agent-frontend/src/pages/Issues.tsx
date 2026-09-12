@@ -213,6 +213,7 @@ function IssuesSourcesSection({
         <Flex gap={{ default: 'gapSm' }} alignItems={{ default: 'alignItemsCenter' }} style={{ marginBottom: '12px' }}>
           <FlexItem flex={{ default: 'flex_1' }}>
             <TextInput
+              id="sources-url-input"
               value={newUrl}
               onChange={(_e, v) => setNewUrl(v)}
               placeholder="GitHub repository URL or Jira board URL"
@@ -223,7 +224,7 @@ function IssuesSourcesSection({
             />
           </FlexItem>
           <FlexItem>
-            <Button variant="primary" isDisabled={adding || !newUrl.trim()} onClick={handleAdd}>
+            <Button id="sources-add-btn" variant="primary" isDisabled={adding || !newUrl.trim()} onClick={handleAdd}>
               {adding ? 'Adding…' : 'Add'}
             </Button>
           </FlexItem>
@@ -235,6 +236,7 @@ function IssuesSourcesSection({
           <ToolbarContent>
             <ToolbarItem>
               <SearchInput
+                id="sources-filter"
                 placeholder="Filter by"
                 value={srcFilter}
                 onChange={(_e, v) => setSrcFilter(v)}
@@ -273,7 +275,7 @@ function IssuesSourcesSection({
             </EmptyStateBody>
           </EmptyState>
         ) : (
-          <Table aria-label="Issues Sources" variant="compact">
+          <Table id="sources-table" aria-label="Issues Sources" variant="compact">
             <Thead>
               <Tr>
                 <Th
@@ -472,6 +474,7 @@ function IssuePickerSection({ onIssueImported }: { onIssueImported?: () => void 
         <Flex gap={{ default: 'gapSm' }} alignItems={{ default: 'alignItemsCenter' }} style={{ marginBottom: '12px' }}>
           <FlexItem flex={{ default: 'flex_1' }}>
             <TextInput
+              id="queue-url-input"
               value={inputUrl}
               onChange={(_e, v) => setInputUrl(v)}
               placeholder="GitHub issue URL or Jira URL"
@@ -480,7 +483,7 @@ function IssuePickerSection({ onIssueImported }: { onIssueImported?: () => void 
             />
           </FlexItem>
           <FlexItem>
-            <Button variant="primary" isDisabled={!inputUrl.trim()} onClick={handleAddToQueue}>
+            <Button id="queue-add-btn" variant="primary" isDisabled={!inputUrl.trim()} onClick={handleAddToQueue}>
               Add
             </Button>
           </FlexItem>
@@ -507,6 +510,7 @@ function IssuePickerSection({ onIssueImported }: { onIssueImported?: () => void 
           <ToolbarContent>
             <ToolbarItem>
               <SearchInput
+                id="queue-filter"
                 placeholder="Filter by"
                 value={queueFilter}
                 onChange={(_e, v) => setQueueFilter(v)}
@@ -535,7 +539,7 @@ function IssuePickerSection({ onIssueImported }: { onIssueImported?: () => void 
             <EmptyStateBody>No issues queued. Add an issue URL above.</EmptyStateBody>
           </EmptyState>
         ) : (
-          <Table aria-label="Issue queue" variant="compact">
+          <Table id="queue-table" aria-label="Issue queue" variant="compact">
             <Thead>
               <Tr>
                 <Th
@@ -733,6 +737,7 @@ function AllIssuesSection({
           </FlexItem>
           <FlexItem>
             <SearchInput
+              id="issues-filter"
               placeholder="Filter by"
               value={search}
               onChange={(_e, v) => setSearch(v)}
@@ -758,7 +763,7 @@ function AllIssuesSection({
             </EmptyStateBody>
           </EmptyState>
         ) : (
-          <Table aria-label="All Issues" variant="compact">
+          <Table id="issues-table" aria-label="All Issues" variant="compact">
             <Thead>
               <Tr>
                 <Th>ID</Th>

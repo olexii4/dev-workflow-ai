@@ -15,22 +15,14 @@ import { describe, it, expect } from 'vitest';
 // ── Pure helpers re-tested here (no DB, no network) ──────────────────────────
 
 function isPublic(url: string): boolean {
-  return url.startsWith('/api/auth/') || url === '/health' || !url.startsWith('/api/');
+  return url.startsWith('/api/preferences/') || url === '/health' || !url.startsWith('/api/');
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('isPublic route guard', () => {
-  it('allows /api/auth/login', () => {
-    expect(isPublic('/api/auth/login')).toBe(true);
-  });
-
-  it('allows /api/auth/me', () => {
-    expect(isPublic('/api/auth/me')).toBe(true);
-  });
-
-  it('allows /api/auth/logout', () => {
-    expect(isPublic('/api/auth/logout')).toBe(true);
+  it('allows /api/preferences/user', () => {
+    expect(isPublic('/api/preferences/user')).toBe(true);
   });
 
   it('allows /health', () => {

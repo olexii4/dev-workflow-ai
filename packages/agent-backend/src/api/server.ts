@@ -56,8 +56,8 @@ export async function buildServer() {
     });
   }
 
-  // Auth routes (public — no session check)
-  await app.register(authRoutes, { prefix: '/api/auth' });
+  // User identity (public — no session check)
+  await app.register(authRoutes, { prefix: '/api/preferences' });
 
   // Protected API routes
   await app.register(projectsRoutes, { prefix: '/api/projects' });

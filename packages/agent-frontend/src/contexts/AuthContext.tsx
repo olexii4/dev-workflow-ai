@@ -16,13 +16,11 @@ import { getMe, AuthUser } from '../api/client.js';
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
-  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
-  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -36,14 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    setUser(null);
-    window.location.hash = '#/login';
-  };
-
   return (
-    <AuthContext.Provider value={{ user, loading, logout: handleLogout }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
     </AuthContext.Provider>
   );

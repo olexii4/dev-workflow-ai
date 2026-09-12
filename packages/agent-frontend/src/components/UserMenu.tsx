@@ -12,7 +12,6 @@
 
 import React, { useState } from 'react';
 import {
-  Divider,
   Dropdown,
   DropdownGroup,
   DropdownItem,
@@ -24,7 +23,7 @@ import { useAuth } from '../contexts/AuthContext.js';
 const AVATAR_DEV = '/branding/avatar-dev.png';
 
 export default function UserMenu() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
   if (!user) return null;
@@ -40,6 +39,7 @@ export default function UserMenu() {
       toggle={(ref: React.Ref<HTMLButtonElement>) => (
         <MenuToggle
           ref={ref}
+          id="user-menu-toggle"
           variant="plain"
           onClick={() => setOpen(o => !o)}
           aria-label={`User menu — ${displayName}`}
@@ -56,25 +56,12 @@ export default function UserMenu() {
     >
       <DropdownList>
         <DropdownGroup label={displayName}>
-          <DropdownItem isDisabled>
+          <DropdownItem id="user-menu-identity" isDisabled>
             <span style={{ fontSize: '0.8rem', color: 'var(--pf-t--global--text--color--subtle)' }}>
               {isDevMode ? 'dev mode — no GitHub auth' : `@${user.login}`}
             </span>
           </DropdownItem>
         </DropdownGroup>
-        {!isDevMode && (
-          <>
-            <Divider />
-            <DropdownItem
-              onClick={() => {
-                setOpen(false);
-                logout();
-              }}
-            >
-              Log out
-            </DropdownItem>
-          </>
-        )}
       </DropdownList>
     </Dropdown>
   );

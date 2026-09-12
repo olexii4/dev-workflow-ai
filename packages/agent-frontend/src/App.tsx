@@ -71,8 +71,9 @@ function AppNav() {
             item.to === '/dashboard'
               ? location.pathname === '/' || location.pathname.startsWith('/dashboard')
               : location.pathname.startsWith(item.to);
+          const navId = `nav-item-${item.label.toLowerCase().replace(/\s+/g, '-')}`;
           return (
-            <NavItem key={item.to} isActive={isActive}>
+            <NavItem key={item.to} id={navId} isActive={isActive}>
               <NavLink to={item.to}>{item.label}</NavLink>
             </NavItem>
           );
@@ -91,7 +92,7 @@ function HelpMenu({ onAbout }: { onAbout: () => void }) {
       isOpen={open}
       onOpenChange={setOpen}
       toggle={(ref: React.Ref<HTMLButtonElement>) => (
-        <MenuToggle ref={ref} variant="plain" onClick={() => setOpen(o => !o)} aria-label="Help">
+        <MenuToggle ref={ref} id="help-menu-toggle" variant="plain" onClick={() => setOpen(o => !o)} aria-label="Help">
           <QuestionCircleIcon />
         </MenuToggle>
       )}

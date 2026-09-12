@@ -252,7 +252,7 @@ export interface AuthUser {
   avatar: string;
 }
 
-export const getMe = () => apiFetch<AuthUser>('/auth/me');
+export const getMe = () => apiFetch<AuthUser>('/preferences/user');
 export const logout = () => apiFetch<void>('/auth/logout', { method: 'POST' });
 export const loginUrl = '/api/auth/login';
 // ── Settings ──────────────────────────────────────────────────────────────
