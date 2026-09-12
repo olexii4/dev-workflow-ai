@@ -79,8 +79,10 @@ function estimateStoryPoints(issue: GhIssue): number {
   return 3;
 }
 
+const tags = ['Issues'];
+
 export const issuesRoutes: FastifyPluginAsync = async app => {
-  app.get<{ Querystring: { project?: string; cached?: string } }>('/', async (req, reply) => {
+  app.get<{ Querystring: { project?: string; cached?: string } }>('/', { schema: { tags } }, async (req, reply) => {
     const { project } = req.query;
     if (!project) return reply.status(400).send({ error: 'project query param required' });
 

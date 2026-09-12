@@ -67,9 +67,11 @@ async function listSamples(): Promise<{ name: string; path: string; subdirs: str
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
+const tags = ['Settings'];
+
 export const settingsRoutes: FastifyPluginAsync = async app => {
   // GET /api/settings — return all settings as object
-  app.get('/', async (_req, reply) => {
+  app.get('/', { schema: { tags } }, async (_req, reply) => {
     const { rows } = await db.query<{ key: string; value: string }>(
       'SELECT key, value FROM settings',
     );
@@ -102,7 +104,7 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /api/settings/samples — list available sample packs
-  app.get('/samples', async (_req, reply) => {
+  app.get('/samples', { schema: { tags } }, async (_req, reply) => {
     const samples = await listSamples();
     return reply.send(
       samples.map(s => ({
@@ -116,7 +118,7 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
   });
 
   // POST /api/settings/samples/:name/load — import a sample into DB
-  app.post<{ Params: { name: string } }>('/samples/:name/load', async (req, reply) => {
+  app.post<{ Params: { name: string } }>('/samples/:name/load', { schema: { tags } }, async (req, reply) => {
     // Prevent path traversal — ensure resolved path stays under SAMPLES_DIR
     const samplePath = resolve(join(SAMPLES_DIR, req.params.name));
     if (!samplePath.startsWith(SAMPLES_DIR + sep)) {
@@ -142,7 +144,7 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /api/settings/ollama-models — list models available in the local Ollama instance
-  app.get('/ollama-models', async (_req, reply) => {
+  app.get('/ollama-models', { schema: { tags } }, async (_req, reply) => {
     const ollamaUrl = await getSetting('ollamaUrl', process.env.OLLAMA_BASE_URL ?? 'http://ollama:11434');
     try {
       const res = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
@@ -155,7 +157,7 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /api/settings/export — export all contexts as JSON
-  app.get('/export', async (_req, reply) => {
+  app.get('/export', { schema: { tags } }, async (_req, reply) => {
     const { rows: contexts } = await db.query(
       'SELECT project_slug, name, content, source_file, updated_at FROM contexts ORDER BY project_slug, name',
     );

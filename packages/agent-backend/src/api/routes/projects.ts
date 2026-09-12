@@ -63,15 +63,17 @@ async function gitCloneOrPull(repo: string, localPath: string): Promise<string> 
   }
 }
 
+const tags = ['Projects'];
+
 export const projectsRoutes: FastifyPluginAsync = async app => {
   // GET / — list all projects
-  app.get('/', async (_req, reply) => {
+  app.get('/', { schema: { tags } }, async (_req, reply) => {
     const { rows } = await db.query<ProjectRow>('SELECT * FROM projects ORDER BY slug');
     return reply.send(rows);
   });
 
   // GET /:slug — single project with context file list
-  app.get<{ Params: { slug: string } }>('/:slug', async (req, reply) => {
+  app.get<{ Params: { slug: string } }>('/:slug', { schema: { tags } }, async (req, reply) => {
     const { slug } = req.params;
     const { rows: projectRows } = await db.query<ProjectRow>(
       'SELECT * FROM projects WHERE slug = $1',
@@ -89,9 +91,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /:slug/context — merged context text
-  app.get<{ Params: { slug: string }; Querystring: { filter?: string } }>(
-    '/:slug/context',
-    async (req, reply) => {
+  app.get<{ Params: { slug: string }; Querystring: { filter?: string } }>('/:slug/context', { schema: { tags } }, async (req, reply) => {
       const { slug } = req.params;
       const filter = req.query.filter ? req.query.filter.split(',') : undefined;
       const context = await loadContext(slug, filter);
@@ -110,7 +110,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
       auto_approve_min_priority?: string;
       story_point_budget?: number;
     };
-  }>('/', async (req, reply) => {
+  }>('/', { schema: { tags } }, async (req, reply) => {
     const {
       slug,
       repo,
@@ -149,7 +149,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   app.put<{
     Params: { slug: string };
     Body: Partial<ProjectRow>;
-  }>('/:slug', async (req, reply) => {
+  }>('/:slug', { schema: { tags } }, async (req, reply) => {
     const { slug } = req.params;
     const { repo, local_path, stack, description, auto_approve_min_priority, story_point_budget } =
       req.body;
@@ -172,7 +172,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   });
 
   // DELETE /:slug — delete project and its cloned repo
-  app.delete<{ Params: { slug: string } }>('/:slug', async (req, reply) => {
+  app.delete<{ Params: { slug: string } }>('/:slug', { schema: { tags } }, async (req, reply) => {
     const { slug } = req.params;
     const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE slug = $1', [slug]);
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });
@@ -191,7 +191,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   });
 
   // POST /:slug/update — clone or pull the repo, update local_path in DB
-  app.post<{ Params: { slug: string } }>('/:slug/update', async (req, reply) => {
+  app.post<{ Params: { slug: string } }>('/:slug/update', { schema: { tags } }, async (req, reply) => {
     const { slug } = req.params;
     const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE slug = $1', [slug]);
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });

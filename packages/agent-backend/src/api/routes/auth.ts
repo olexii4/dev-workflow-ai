@@ -59,9 +59,11 @@ async function resolveGithubUser(): Promise<GithubUser | null> {
   return null;
 }
 
+const tags = ['Auth'];
+
 export const authRoutes: FastifyPluginAsync = async app => {
   // GET /api/auth/me — current user from gateway headers (or dev mode)
-  app.get('/me', async (req, reply) => {
+  app.get('/me', { schema: { tags } }, async (req, reply) => {
     const preferredUsername = req.headers['x-forwarded-preferred-username'] as string | undefined;
     const forwardedUser = req.headers['x-forwarded-user'] as string | undefined;
     const forwardedEmail = req.headers['x-forwarded-email'] as string | undefined;
@@ -86,12 +88,12 @@ export const authRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /api/auth/login — gateway manages the OAuth redirect; nothing to do here
-  app.get('/login', async (_req, reply) => {
+  app.get('/login', { schema: { tags } }, async (_req, reply) => {
     return reply.redirect('/#/dashboard');
   });
 
   // POST /api/auth/logout — gateway manages sessions; nothing to do here
-  app.post('/logout', async (_req, reply) => {
+  app.post('/logout', { schema: { tags } }, async (_req, reply) => {
     return reply.send({ ok: true });
   });
 };

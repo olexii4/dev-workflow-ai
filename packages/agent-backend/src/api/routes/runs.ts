@@ -235,9 +235,11 @@ async function runAgentInBackground(
   void failRun; // suppress unused warning — used indirectly
 }
 
+const tags = ['Runs'];
+
 export const runsRoutes: FastifyPluginAsync = async app => {
   // GET / — list runs
-  app.get<{ Querystring: { limit?: string; offset?: string } }>('/', async (req, reply) => {
+  app.get<{ Querystring: { limit?: string; offset?: string } }>('/', { schema: { tags } }, async (req, reply) => {
     const limit = Math.min(parseInt(req.query.limit ?? '20', 10), 100);
     const offset = parseInt(req.query.offset ?? '0', 10);
     const { rows } = await db.query<AgentRunRow>(
@@ -251,7 +253,7 @@ export const runsRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /:threadId — single run with events and findings
-  app.get<{ Params: { threadId: string } }>('/:threadId', async (req, reply) => {
+  app.get<{ Params: { threadId: string } }>('/:threadId', { schema: { tags } }, async (req, reply) => {
     const { threadId } = req.params;
     const { rows: runRows } = await db.query<AgentRunRow>(
       'SELECT * FROM agent_runs WHERE thread_id = $1',
@@ -274,7 +276,7 @@ export const runsRoutes: FastifyPluginAsync = async app => {
   // POST / — start a run
   // Accepts: { project, issueNumber?, forcePriority?, outputDir? }
   //       OR { issueUrl: "https://github.com/owner/repo/issues/N", forcePriority? }
-  app.post<{ Body: StartRunBody }>('/', async (req, reply) => {
+  app.post<{ Body: StartRunBody }>('/', { schema: { tags } }, async (req, reply) => {
     const { issueUrl, forcePriority, outputDir } = req.body;
     let { project, issueNumber } = req.body;
 
@@ -345,7 +347,7 @@ export const runsRoutes: FastifyPluginAsync = async app => {
   });
 
   // DELETE /:threadId — cancel a running run (soft); hard-delete a finished run
-  app.delete<{ Params: { threadId: string } }>('/:threadId', async (req, reply) => {
+  app.delete<{ Params: { threadId: string } }>('/:threadId', { schema: { tags } }, async (req, reply) => {
     const { threadId } = req.params;
     const { rows } = await db.query<{ status: string }>(
       'SELECT status FROM agent_runs WHERE thread_id = $1',

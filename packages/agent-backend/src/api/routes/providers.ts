@@ -144,9 +144,11 @@ export async function seedDefaultProviders(): Promise<void> {
   console.log('[providers] Seeded default LLM providers');
 }
 
+const tags = ['Providers'];
+
 export const providersRoutes: FastifyPluginAsync = async app => {
   // GET / — list all providers (api_key masked)
-  app.get('/', async (_req, reply) => {
+  app.get('/', { schema: { tags } }, async (_req, reply) => {
     const { rows } = await db.query<ProviderRow>(
       'SELECT * FROM llm_providers ORDER BY id ASC',
     );
@@ -154,7 +156,7 @@ export const providersRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /active — active provider config (api_key unmasked for agent use)
-  app.get('/active', async (_req, reply) => {
+  app.get('/active', { schema: { tags } }, async (_req, reply) => {
     const { rows } = await db.query<ProviderRow>(
       'SELECT * FROM llm_providers WHERE is_active = true LIMIT 1',
     );
@@ -190,13 +192,13 @@ export const providersRoutes: FastifyPluginAsync = async app => {
   });
 
   // DELETE /:providerId
-  app.delete<{ Params: { providerId: string } }>('/:providerId', async (req, reply) => {
+  app.delete<{ Params: { providerId: string } }>('/:providerId', { schema: { tags } }, async (req, reply) => {
     await db.query('DELETE FROM llm_providers WHERE provider_id = $1', [req.params.providerId]);
     return reply.status(204).send();
   });
 
   // POST /test — send a prompt to the specified or active provider
-  app.post<{ Body: { prompt: string; provider_id?: string } }>('/test', async (req, reply) => {
+  app.post<{ Body: { prompt: string; provider_id?: string } }>('/test', { schema: { tags } }, async (req, reply) => {
     const { prompt, provider_id } = req.body;
     if (!prompt?.trim()) {
       return reply.status(400).send({ error: 'prompt is required' });
@@ -259,7 +261,7 @@ export const providersRoutes: FastifyPluginAsync = async app => {
   // POST /test-all — parallel health check for all configured providers
   // Inspired by Claude Code agent-sdk-verifier (4-step checklist) +
   // code-review plugin (parallel independent probes per dimension).
-  app.post<{ Body: { autoActivate?: boolean } }>('/test-all', async (req, reply) => {
+  app.post<{ Body: { autoActivate?: boolean } }>('/test-all', { schema: { tags } }, async (req, reply) => {
     const { testAllProviders, autoActivateBestProvider } = await import('../../nodes/testProviders.js');
     const results = await testAllProviders();
     let activated: string | null = null;

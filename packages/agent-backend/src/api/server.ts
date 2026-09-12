@@ -14,11 +14,11 @@ import Fastify from 'fastify';
 import staticPlugin from '@fastify/static';
 import websocketPlugin from '@fastify/websocket';
 import cookiePlugin from '@fastify/cookie';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { existsSync } from 'node:fs';
+import { logger } from '../utils/logger.js';
+import { registerSwagger } from './swagger.js';
 import { projectsRoutes } from './routes/projects.js';
 import { issuesRoutes } from './routes/issues.js';
 import { runsRoutes } from './routes/runs.js';
@@ -30,32 +30,14 @@ import { agentStream } from './ws/agentStream.js';
 
 export async function buildServer() {
   const app = Fastify({
-    logger: { level: process.env.LOG_LEVEL ?? 'info' },
+    loggerInstance: logger,
   });
 
   await app.register(cookiePlugin, {
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
   });
 
-  await app.register(swagger, {
-    openapi: {
-      openapi: '3.0.0',
-      info: { title: 'dev-workflow-ai API', version: '0.2.0', description: 'Autonomous AI engineer — issue→PR→review→fix API' },
-      tags: [
-        { name: 'runs', description: 'Agent run lifecycle' },
-        { name: 'projects', description: 'Subproject registry' },
-        { name: 'issues', description: 'Issue store and sources' },
-        { name: 'providers', description: 'LLM provider management' },
-        { name: 'settings', description: 'Global settings' },
-        { name: 'auth', description: 'Authentication' },
-      ],
-    },
-  });
-
-  await app.register(swaggerUi, {
-    routePrefix: '/swagger',
-    uiConfig: { docExpansion: 'list', deepLinking: true, tryItOutEnabled: true },
-  });
+  registerSwagger(app);
 
   await app.register(websocketPlugin);
 

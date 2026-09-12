@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
-    "@langchain/openai": "^1.5.12"
+    "@langchain/openai": "^1.5.12",
+    "pino-pretty": "^13.1.3"
   }
 }

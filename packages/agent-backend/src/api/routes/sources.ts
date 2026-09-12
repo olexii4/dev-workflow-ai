@@ -305,9 +305,11 @@ async function fetchJiraIssues(sourceUrl: string, sourceId: number): Promise<num
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
+const tags = ['Sources'];
+
 export const sourcesRoutes: FastifyPluginAsync = async app => {
   // GET /api/sources — list all sources
-  app.get('/', async (_req, reply) => {
+  app.get('/', { schema: { tags } }, async (_req, reply) => {
     const { rows } = await db.query<IssueSourceRow>(
       'SELECT * FROM issue_sources ORDER BY created_at DESC',
     );
@@ -315,9 +317,7 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
   });
 
   // POST /api/sources — add source by URL
-  app.post<{ Body: { url: string; project_slug?: string; label?: string } }>(
-    '/',
-    async (req, reply) => {
+  app.post<{ Body: { url: string; project_slug?: string; label?: string } }>('/', { schema: { tags } }, async (req, reply) => {
       const { url, project_slug, label } = req.body;
       if (!url) return reply.status(400).send({ error: 'url is required' });
 
@@ -348,13 +348,13 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
   );
 
   // DELETE /api/sources/:id
-  app.delete<{ Params: { id: string } }>('/:id', async (req, reply) => {
+  app.delete<{ Params: { id: string } }>('/:id', { schema: { tags } }, async (req, reply) => {
     await db.query('DELETE FROM issue_sources WHERE id = $1', [req.params.id]);
     return reply.status(204).send();
   });
 
   // POST /api/sources/:id/sync — manual sync trigger
-  app.post<{ Params: { id: string } }>('/:id/sync', async (req, reply) => {
+  app.post<{ Params: { id: string } }>('/:id/sync', { schema: { tags } }, async (req, reply) => {
     const { rows } = await db.query<IssueSourceRow>('SELECT * FROM issue_sources WHERE id = $1', [
       req.params.id,
     ]);
@@ -368,9 +368,7 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
   });
 
   // GET /api/sources/:id/issues — issues from one source
-  app.get<{ Params: { id: string }; Querystring: { status?: string } }>(
-    '/:id/issues',
-    async (req, reply) => {
+  app.get<{ Params: { id: string }; Querystring: { status?: string } }>('/:id/issues', { schema: { tags } }, async (req, reply) => {
       const status = req.query.status ?? 'open';
       const { rows } = await db.query<IssueRow>(
         `SELECT i.*, s.label as source_label, s.kind as source_kind
@@ -385,7 +383,7 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
 
   // POST /api/sources/issues/import — fetch a single GitHub or Jira issue by URL,
   //   auto-create its source if needed, store in DB, return the stored issue row.
-  app.post<{ Body: { url: string } }>('/issues/import', async (req, reply) => {
+  app.post<{ Body: { url: string } }>('/issues/import', { schema: { tags } }, async (req, reply) => {
     const { url } = req.body;
     if (!url?.trim()) return reply.status(400).send({ error: 'url is required' });
 
@@ -491,13 +489,13 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
   });
 
   // DELETE /api/sources/issues/:issueId — remove a single stored issue
-  app.delete<{ Params: { issueId: string } }>('/issues/:issueId', async (req, reply) => {
+  app.delete<{ Params: { issueId: string } }>('/issues/:issueId', { schema: { tags } }, async (req, reply) => {
     await db.query('DELETE FROM issues WHERE id = $1', [parseInt(req.params.issueId, 10)]);
     return reply.status(204).send();
   });
 
   // GET /api/sources/issues — all open issues across active sources
-  app.get<{ Querystring: { status?: string; limit?: string } }>('/issues', async (req, reply) => {
+  app.get<{ Querystring: { status?: string; limit?: string } }>('/issues', { schema: { tags } }, async (req, reply) => {
     const status = req.query.status ?? 'open';
     const limit = Math.min(parseInt(req.query.limit ?? '200', 10), 500);
     const { rows } = await db.query(
