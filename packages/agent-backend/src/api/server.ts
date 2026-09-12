@@ -53,7 +53,7 @@ export async function buildServer() {
   });
 
   await app.register(swaggerUi, {
-    routePrefix: '/api/swagger',
+    routePrefix: '/swagger',
     uiConfig: { docExpansion: 'list', deepLinking: true, tryItOutEnabled: true },
   });
 

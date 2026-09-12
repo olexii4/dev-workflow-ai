@@ -283,7 +283,7 @@ yarn dev:api
 - **Claude / Gemini / Ollama** — LLM backends (external Ollama supported via `OLLAMA_BASE_URL`)
 - **React + PatternFly 6** — web UI (dashboard, issue browser, live run view); webpack build, CSS modules
 - **Redux Toolkit** — state management (Runs, Projects slices; `createAsyncThunk` + TTL caching)
-- **Fastify** — REST API + WebSocket; Swagger UI at `/api/swagger`
+- **Fastify** — REST API + WebSocket; Swagger UI at `/swagger`
 - **PostgreSQL / PGlite** — persistent state (agent checkpoints, run history, project contexts); PGlite (Postgres-in-WASM) used automatically when `DATABASE_URL` is unset
 - **Eclipse Che / OpenShift** — CDE platform, OpenShift OAuth via gateway
 
