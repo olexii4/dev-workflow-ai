@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": [
+    "packages/agent-backend/src/**/*",
+    "packages/agent-frontend/src/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
