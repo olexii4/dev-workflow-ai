@@ -1,0 +1,92 @@
+# Issue Filtering Rules
+
+Rules applied by the `filter-issues` skill to select eligible issues from a GitHub project.
+
+---
+
+## Hard Filters (eliminate before scoring)
+
+An issue is **ineligible** if ANY of these are true:
+
+- State is not `open`
+- Has any of these labels: `wontfix`, `duplicate`, `stale`, `lifecycle/stale`, `needs-triage`, `blocked`
+- Already has an assignee
+- Is a question (title starts with "Question:" or "How to")
+- Is a tracking issue / epic (body contains "Tracking issue" or "Epic:")
+- Is a validation issue (title starts with `[Validate]` or body says "Validation for: CRW-")
+- Description body is empty or under 100 characters (excluding template boilerplate)
+
+---
+
+## Base Score by Issue Type
+
+| Label | Base score |
+|---|---|
+| `kind/bug` | 10 |
+| `kind/enhancement` | 6 |
+| `area/docs` | 3 |
+| (no type label) | 4 |
+
+---
+
+## Priority Boosts (additive)
+
+| Signal | How to detect | Boost |
+|---|---|---|
+| `priority/critical` label | label present | +5 |
+| `priority/high` label | label present | +3 |
+| `priority/major` label | label present | +2 |
+| CVE label (`CVE-YYYY-NNNNN`) | label starts with `CVE-` | +3 |
+| Has linked failing PR | body/comments contain `#NNNN` pointing to an open PR | +3 |
+| Has test reproduction | body contains code block with reproduction steps | +2 |
+| Linked to failing CI run | body/comments contain GitHub Actions URL with failed status | +2 |
+| Reporter is contributor | reporter appears in recent commit authors | +1 |
+| Has clear acceptance criteria | body contains "Acceptance criteria" section | +1 |
+| `good first issue` label | label present | +1 |
+
+---
+
+## Description Quality Penalties (subtractive)
+
+Apply **after** base score + priority boosts. See `issue-description-quality.md` section 6.
+
+| Condition | Penalty |
+|---|---|
+| Bug: missing steps to reproduce OR missing expected/actual | -3 |
+| Bug: template placeholders unfilled (`# <steps>`) | -3 |
+| Feature: vague request with no comparison to existing feature | -2 |
+| Description under 200 chars (non-CVE) | -2 |
+
+---
+
+## Project-Specific Label Filters
+
+Only fetch issues with these labels (from `rules.json` per project):
+
+| Project | Fetch labels |
+|---|---|
+| che-dashboard | `area/dashboard-frontend`, `area/dashboard-backend`, `kind/bug`, `kind/enhancement` |
+| che-server | `kind/bug`, `kind/enhancement` |
+| devworkspace-operator | `kind/bug` |
+| che-docs | `area/docs` |
+| che-ai-tool-images | `kind/bug`, `kind/enhancement` |
+
+---
+
+## Story Point Budget Filter
+
+After scoring, further filter to issues whose story-point estimate is ≤ budget:
+
+- Default budget: **3 story points** (from `rules.json` → `global.story_point_budget_per_session`)
+- Apply `assign-story-points` skill to each candidate before final selection
+
+---
+
+## Output
+
+Return a ranked table:
+
+| # | Issue | Score | Story pts | Labels | URL |
+|---|---|---|---|---|---|
+| 1 | #1234 Fix workspace not starting | 15 | 2 | kind/bug, priority/high | ... |
+| 2 | #1201 Add sorting to workspace list | 7 | 3 | kind/enhancement | ... |
