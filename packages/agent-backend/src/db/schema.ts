@@ -12,7 +12,7 @@
 
 export interface ProjectRow {
   id: number;
-  slug: string;
+  name: string;
   repo: string;
   local_path: string;
   default_branch: string;

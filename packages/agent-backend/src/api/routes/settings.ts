@@ -162,7 +162,7 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
       'SELECT project_slug, name, content, source_file, updated_at FROM contexts ORDER BY project_slug, name',
     );
     const { rows: projects } = await db.query(
-      'SELECT slug, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget FROM projects ORDER BY slug',
+      'SELECT name, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget FROM projects ORDER BY name',
     );
 
     const exportData = {

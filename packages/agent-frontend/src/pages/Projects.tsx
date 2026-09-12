@@ -77,7 +77,7 @@ function projectMatches(p: Project, filter: string): boolean {
   if (!filter) return true;
   const q = filter.toLowerCase();
   return (
-    p.slug.toLowerCase().includes(q) ||
+    p.name.toLowerCase().includes(q) ||
     p.repo.toLowerCase().includes(q) ||
     (p.description ?? '').toLowerCase().includes(q) ||
     (p.stack ?? []).some(t => t.toLowerCase().includes(q))
@@ -85,7 +85,7 @@ function projectMatches(p: Project, filter: string): boolean {
 }
 
 const EMPTY_FORM = {
-  slug: '',
+  name: '',
   repo: '',
   description: '',
   auto_approve_min_priority: 'major',
@@ -133,7 +133,7 @@ export default function Projects() {
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [updatingSlug, setUpdatingSlug] = useState<string | null>(null);
+  const [updatingName, setUpdatingName] = useState<string | null>(null);
   const { addAlert } = useAlerts();
 
   const filterRef = useRef<HTMLInputElement>(null);
@@ -154,11 +154,11 @@ export default function Projects() {
   );
 
   const handleAdd = async () => {
-    if (!form.slug || !form.repo) return;
+    if (!form.name || !form.repo) return;
     setSaving(true);
     try {
       await createProject(form);
-      addAlert('success', `Project "${form.slug}" added`);
+      addAlert('success', `Project "${form.name}" added`);
       setShowAdd(false);
       setForm({ ...EMPTY_FORM });
       load();
@@ -182,8 +182,8 @@ export default function Projects() {
     if (!editTarget) return;
     setEditSaving(true);
     try {
-      await updateProject(editTarget.slug, editForm);
-      addAlert('success', `Project "${editTarget.slug}" updated`);
+      await updateProject(editTarget.name, editForm);
+      addAlert('success', `Project "${editTarget.name}" updated`);
       setEditTarget(null);
       load();
     } catch (e) {
@@ -197,8 +197,8 @@ export default function Projects() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteProject(deleteTarget.slug);
-      addAlert('success', `Project "${deleteTarget.slug}" deleted`);
+      await deleteProject(deleteTarget.name);
+      addAlert('success', `Project "${deleteTarget.name}" deleted`);
       setDeleteTarget(null);
       load();
     } catch (e) {
@@ -209,15 +209,15 @@ export default function Projects() {
   };
 
   const handleUpdate = async (p: Project) => {
-    setUpdatingSlug(p.slug);
+    setUpdatingName(p.name);
     try {
-      const { cloned } = await updateProjectRepo(p.slug);
-      addAlert('success', `${p.slug}: ${cloned ? 'cloned successfully' : 'pulled latest changes'}`);
+      const { cloned } = await updateProjectRepo(p.name);
+      addAlert('success', `${p.name}: ${cloned ? 'cloned successfully' : 'pulled latest changes'}`);
       load();
     } catch (e) {
-      addAlert('danger', e instanceof Error ? e.message : `Failed to update ${p.slug}`);
+      addAlert('danger', e instanceof Error ? e.message : `Failed to update ${p.name}`);
     } finally {
-      setUpdatingSlug(null);
+      setUpdatingName(null);
     }
   };
 
@@ -275,12 +275,12 @@ export default function Projects() {
         ) : (
           <Gallery hasGutter minWidths={{ default: '280px' }} className={styles.gallery}>
             {filtered.map(p => {
-              const isUpdating = updatingSlug === p.slug;
+              const isUpdating = updatingName === p.name;
               const visibleStack = (p.stack ?? []).slice(0, 3);
 
               return (
-                <GalleryItem key={p.slug}>
-                  <Card isCompact className={styles.projectCard} aria-label={p.slug}>
+                <GalleryItem key={p.name}>
+                  <Card isCompact className={styles.projectCard} aria-label={p.name}>
                     <CardHeader
                       actions={{
                         actions: (
@@ -321,7 +321,7 @@ export default function Projects() {
                       }}
                     >
                       <ProjectAvatar repo={p.repo} />
-                      <CardTitle className={styles.projectSlug}>{p.slug}</CardTitle>
+                      <CardTitle className={styles.projectSlug}>{p.name}</CardTitle>
                     </CardHeader>
 
                     <CardBody>
@@ -385,11 +385,11 @@ export default function Projects() {
         <ModalHeader title="Add Project" labelId="add-project-title" />
         <ModalBody>
           <Form>
-            <FormGroup label="Slug" isRequired fieldId="add-slug">
+            <FormGroup label="Name" isRequired fieldId="add-name">
               <TextInput
-                id="add-slug"
-                value={form.slug}
-                onChange={(_e, v) => setForm(p => ({ ...p, slug: v }))}
+                id="add-name"
+                value={form.name}
+                onChange={(_e, v) => setForm(p => ({ ...p, name: v }))}
                 placeholder="my-service"
                 className={styles.shortInput}
               />
@@ -426,7 +426,7 @@ export default function Projects() {
           </Form>
         </ModalBody>
         <ModalFooter>
-          <Button variant="primary" isDisabled={saving || !form.slug || !form.repo} onClick={handleAdd}>
+          <Button variant="primary" isDisabled={saving || !form.name || !form.repo} onClick={handleAdd}>
             {saving ? 'Saving…' : 'Add Project'}
           </Button>
           <Button variant="link" onClick={() => setShowAdd(false)}>Cancel</Button>
@@ -436,7 +436,7 @@ export default function Projects() {
       {/* ── Edit modal ── */}
       {editTarget && (
         <Modal isOpen onClose={() => setEditTarget(null)} variant="small" aria-labelledby="edit-project-title">
-          <ModalHeader title={`Edit — ${editTarget.slug}`} labelId="edit-project-title" />
+          <ModalHeader title={`Edit — ${editTarget.name}`} labelId="edit-project-title" />
           <ModalBody>
             <Form>
               <FormGroup label="Description" fieldId="edit-description">
@@ -476,7 +476,7 @@ export default function Projects() {
           <ModalHeader title="Delete project?" labelId="delete-project-title" />
           <ModalBody>
             <p>
-              Delete <strong>{deleteTarget.slug}</strong>?
+              Delete <strong>{deleteTarget.name}</strong>?
               {deleteTarget.local_path && (
                 <> The cloned repository at <code>{deleteTarget.local_path}</code> will also be removed.</>
               )}

@@ -15,7 +15,7 @@ import { db } from './client.js';
 const MIGRATIONS = [
   `CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
-    slug TEXT UNIQUE NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     repo TEXT NOT NULL DEFAULT '',
     local_path TEXT DEFAULT '',
     stack TEXT[] DEFAULT '{}',
@@ -130,6 +130,14 @@ const MIGRATIONS = [
 
   // Add default_branch to projects (importKnowledge reads it from context.md frontmatter)
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS default_branch TEXT DEFAULT 'main'`,
+
+  // Rename slug → name in projects (slug was the human-readable identifier)
+  `DO $$ BEGIN
+     IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_name='projects' AND column_name='slug') THEN
+       ALTER TABLE projects RENAME COLUMN slug TO name;
+     END IF;
+   END $$`,
 ];
 
 export async function runMigrations(): Promise<void> {

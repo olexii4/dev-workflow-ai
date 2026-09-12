@@ -70,8 +70,8 @@ async function projectForJiraKey(key: string): Promise<string | null> {
   if (ctx[0]?.project_slug) return ctx[0].project_slug;
 
   // 4. Last resort: first project in the DB
-  const { rows: proj } = await db.query<{ slug: string }>('SELECT slug FROM projects LIMIT 1');
-  return proj[0]?.slug ?? null;
+  const { rows: proj } = await db.query<{ name: string }>('SELECT name FROM projects LIMIT 1');
+  return proj[0]?.name ?? null;
 }
 
 /** Map a repo slug to a project name — checks rules.json projects keys */

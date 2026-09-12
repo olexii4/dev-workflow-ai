@@ -205,9 +205,9 @@ export async function importKnowledge(
     // Register project from frontmatter in the main context.md
     if (classified.isProjectContext && meta.repo) {
       const { rowCount } = await db.query(
-        `INSERT INTO projects (slug, repo, local_path, default_branch, stack, description, auto_approve_min_priority, story_point_budget, updated_at)
+        `INSERT INTO projects (name, repo, local_path, default_branch, stack, description, auto_approve_min_priority, story_point_budget, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
-         ON CONFLICT (slug) DO UPDATE SET
+         ON CONFLICT (name) DO UPDATE SET
            repo                      = EXCLUDED.repo,
            local_path                = CASE
              WHEN EXCLUDED.local_path <> '' THEN EXCLUDED.local_path
@@ -255,9 +255,9 @@ export async function importKnowledge(
     } else if (classified.projectSlug !== 'global' && classified.projectSlug !== 'shared') {
       // Auto-stub project row if it doesn't exist yet (no frontmatter)
       await db.query(
-        `INSERT INTO projects (slug, repo, description)
+        `INSERT INTO projects (name, repo, description)
          VALUES ($1, '', $2)
-         ON CONFLICT (slug) DO NOTHING`,
+         ON CONFLICT (name) DO NOTHING`,
         [classified.projectSlug, `Auto-imported from ${rel}`],
       );
     }

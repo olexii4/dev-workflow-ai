@@ -68,33 +68,33 @@ const tags = ['Projects'];
 export const projectsRoutes: FastifyPluginAsync = async app => {
   // GET / — list all projects
   app.get('/', { schema: { tags } }, async (_req, reply) => {
-    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects ORDER BY slug');
+    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects ORDER BY name');
     return reply.send(rows);
   });
 
-  // GET /:slug — single project with context file list
-  app.get<{ Params: { slug: string } }>('/:slug', { schema: { tags } }, async (req, reply) => {
-    const { slug } = req.params;
+  // GET /:name — single project with context file list
+  app.get<{ Params: { name: string } }>('/:name', { schema: { tags } }, async (req, reply) => {
+    const { name } = req.params;
     const { rows: projectRows } = await db.query<ProjectRow>(
-      'SELECT * FROM projects WHERE slug = $1',
-      [slug],
+      'SELECT * FROM projects WHERE name = $1',
+      [name],
     );
     if (!projectRows[0]) return reply.status(404).send({ error: 'Project not found' });
 
     const { rows: contextRows } = await db.query<
       Pick<ContextRow, 'name' | 'source_file' | 'updated_at'>
     >('SELECT name, source_file, updated_at FROM contexts WHERE project_slug = $1 ORDER BY name', [
-      slug,
+      name,
     ]);
 
     return reply.send({ ...projectRows[0], contexts: contextRows });
   });
 
-  // GET /:slug/context — merged context text
-  app.get<{ Params: { slug: string }; Querystring: { filter?: string } }>('/:slug/context', { schema: { tags } }, async (req, reply) => {
-      const { slug } = req.params;
+  // GET /:name/context — merged context text
+  app.get<{ Params: { name: string }; Querystring: { filter?: string } }>('/:name/context', { schema: { tags } }, async (req, reply) => {
+      const { name } = req.params;
       const filter = req.query.filter ? req.query.filter.split(',') : undefined;
-      const context = await loadContext(slug, filter);
+      const context = await loadContext(name, filter);
       return reply.type('text/plain').send(context);
     },
   );
@@ -102,7 +102,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   // POST / — create project
   app.post<{
     Body: {
-      slug: string;
+      name: string;
       repo: string;
       local_path?: string;
       stack?: string[];
@@ -112,7 +112,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
     };
   }>('/', { schema: { tags } }, async (req, reply) => {
     const {
-      slug,
+      name,
       repo,
       local_path,
       stack,
@@ -121,9 +121,9 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
       story_point_budget,
     } = req.body;
     const { rows } = await db.query<ProjectRow>(
-      `INSERT INTO projects (slug, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget)
+      `INSERT INTO projects (name, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (slug) DO UPDATE
+       ON CONFLICT (name) DO UPDATE
          SET repo = EXCLUDED.repo,
              local_path = EXCLUDED.local_path,
              stack = EXCLUDED.stack,
@@ -133,7 +133,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
              updated_at = now()
        RETURNING *`,
       [
-        slug,
+        name,
         repo,
         local_path ?? '',
         stack ?? [],
@@ -145,12 +145,12 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
     return reply.status(201).send(rows[0]);
   });
 
-  // PUT /:slug — update project
+  // PUT /:name — update project
   app.put<{
-    Params: { slug: string };
+    Params: { name: string };
     Body: Partial<ProjectRow>;
-  }>('/:slug', { schema: { tags } }, async (req, reply) => {
-    const { slug } = req.params;
+  }>('/:name', { schema: { tags } }, async (req, reply) => {
+    const { name } = req.params;
     const { repo, local_path, stack, description, auto_approve_min_priority, story_point_budget } =
       req.body;
 
@@ -163,23 +163,23 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
         auto_approve_min_priority = COALESCE($6, auto_approve_min_priority),
         story_point_budget = COALESCE($7, story_point_budget),
         updated_at = now()
-       WHERE slug = $1 RETURNING *`,
-      [slug, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget],
+       WHERE name = $1 RETURNING *`,
+      [name, repo, local_path, stack, description, auto_approve_min_priority, story_point_budget],
     );
 
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });
     return reply.send(rows[0]);
   });
 
-  // DELETE /:slug — delete project and its cloned repo
-  app.delete<{ Params: { slug: string } }>('/:slug', { schema: { tags } }, async (req, reply) => {
-    const { slug } = req.params;
-    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE slug = $1', [slug]);
+  // DELETE /:name — delete project and its cloned repo
+  app.delete<{ Params: { name: string } }>('/:name', { schema: { tags } }, async (req, reply) => {
+    const { name } = req.params;
+    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE name = $1', [name]);
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });
 
     const localPath = rows[0].local_path;
-    await db.query('DELETE FROM contexts WHERE project_slug = $1', [slug]);
-    await db.query('DELETE FROM projects WHERE slug = $1', [slug]);
+    await db.query('DELETE FROM contexts WHERE project_slug = $1', [name]);
+    await db.query('DELETE FROM projects WHERE name = $1', [name]);
 
     if (localPath) {
       await rm(localPath, { recursive: true, force: true }).catch(e =>
@@ -190,10 +190,10 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
     return reply.status(204).send();
   });
 
-  // POST /:slug/update — clone or pull the repo, update local_path in DB
-  app.post<{ Params: { slug: string } }>('/:slug/update', { schema: { tags } }, async (req, reply) => {
-    const { slug } = req.params;
-    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE slug = $1', [slug]);
+  // POST /:name/update — clone or pull the repo, update local_path in DB
+  app.post<{ Params: { name: string } }>('/:name/update', { schema: { tags } }, async (req, reply) => {
+    const { name } = req.params;
+    const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE name = $1', [name]);
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });
 
     const project = rows[0];
@@ -205,8 +205,8 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
     try {
       const actualPath = await gitCloneOrPull(project.repo, targetPath);
       const { rows: updated } = await db.query<ProjectRow>(
-        'UPDATE projects SET local_path = $2, updated_at = now() WHERE slug = $1 RETURNING *',
-        [slug, actualPath],
+        'UPDATE projects SET local_path = $2, updated_at = now() WHERE name = $1 RETURNING *',
+        [name, actualPath],
       );
       return reply.send({ project: updated[0], cloned: !project.local_path });
     } catch (e) {

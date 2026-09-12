@@ -29,7 +29,7 @@ export async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T> 
 
 export interface Project {
   id: number;
-  slug: string;
+  name: string;
   repo: string;
   local_path: string;
   stack: string[];
@@ -40,15 +40,15 @@ export interface Project {
 }
 
 export const getProjects = () => apiFetch<Project[]>('/projects');
-export const getProject = (slug: string) => apiFetch<Project>(`/projects/${slug}`);
+export const getProject = (name: string) => apiFetch<Project>(`/projects/${name}`);
 export const createProject = (body: Partial<Project>) =>
   apiFetch<Project>('/projects', { method: 'POST', body: JSON.stringify(body) });
-export const updateProject = (slug: string, body: Partial<Project>) =>
-  apiFetch<Project>(`/projects/${slug}`, { method: 'PUT', body: JSON.stringify(body) });
-export const deleteProject = (slug: string) =>
-  apiFetch<void>(`/projects/${slug}`, { method: 'DELETE' });
-export const updateProjectRepo = (slug: string) =>
-  apiFetch<{ project: Project; cloned: boolean }>(`/projects/${slug}/update`, { method: 'POST' });
+export const updateProject = (name: string, body: Partial<Project>) =>
+  apiFetch<Project>(`/projects/${name}`, { method: 'PUT', body: JSON.stringify(body) });
+export const deleteProject = (name: string) =>
+  apiFetch<void>(`/projects/${name}`, { method: 'DELETE' });
+export const updateProjectRepo = (name: string) =>
+  apiFetch<{ project: Project; cloned: boolean }>(`/projects/${name}/update`, { method: 'POST' });
 
 // ── Issues ───────────────────────────────────────────────────────────────
 

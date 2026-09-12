@@ -17,7 +17,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface Project {
   id: number;
-  slug: string;
+  name: string;
   repo: string;
   local_path: string;
   default_branch: string;
@@ -46,17 +46,17 @@ export async function createProject(body: Partial<Project>): Promise<Project> {
   }
 }
 
-export async function updateProject(slug: string, body: Partial<Project>): Promise<Project> {
+export async function updateProject(name: string, body: Partial<Project>): Promise<Project> {
   try {
-    return await apiFetch<Project>(`/projects/${slug}`, { method: 'PATCH', body: JSON.stringify(body) });
+    return await apiFetch<Project>(`/projects/${name}`, { method: 'PATCH', body: JSON.stringify(body) });
   } catch (e) {
-    throw new Error(`Failed to update project ${slug}. ${getMessage(e)}`);
+    throw new Error(`Failed to update project ${name}. ${getMessage(e)}`);
   }
 }
 
-export async function deleteProject(slug: string): Promise<void> {
+export async function deleteProject(name: string): Promise<void> {
   try {
-    await apiFetch<void>(`/projects/${slug}`, { method: 'DELETE' });
+    await apiFetch<void>(`/projects/${name}`, { method: 'DELETE' });
   } catch (e) {
     throw new Error(`Failed to delete project ${slug}. ${getMessage(e)}`);
   }

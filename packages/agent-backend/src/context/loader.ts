@@ -55,7 +55,7 @@ export async function loadContext(projectSlug: string, filter?: string[]): Promi
   return rows.map(r => `## ${r.name}\n\n${r.content}`).join('\n\n---\n\n');
 }
 
-export async function loadProjectConfig(slug: string): Promise<ProjectRow | null> {
-  const { rows } = await db.query<ProjectRow>(`SELECT * FROM projects WHERE slug = $1`, [slug]);
+export async function loadProjectConfig(name: string): Promise<ProjectRow | null> {
+  const { rows } = await db.query<ProjectRow>(`SELECT * FROM projects WHERE name = $1`, [name]);
   return rows[0] ?? null;
 }
