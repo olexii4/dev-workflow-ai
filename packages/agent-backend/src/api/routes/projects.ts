@@ -110,7 +110,25 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
       auto_approve_min_priority?: string;
       story_point_budget?: number;
     };
-  }>('/', { schema: { tags } }, async (req, reply) => {
+  }>('/', {
+    schema: {
+      tags,
+      body: {
+        type: 'object',
+        required: ['name', 'repo'],
+        properties: {
+          name: { type: 'string', description: 'Short identifier (e.g. che-dashboard)' },
+          repo: { type: 'string', description: 'GitHub owner/repo (e.g. eclipse-che/che-dashboard)' },
+          local_path: { type: 'string' },
+          stack: { type: 'array', items: { type: 'string' } },
+          description: { type: 'string' },
+          auto_approve_min_priority: { type: 'string', enum: ['critical', 'major', 'minor', 'trivial'] },
+          story_point_budget: { type: 'number' },
+        },
+        examples: [{ name: 'che-dashboard', repo: 'eclipse-che/che-dashboard', auto_approve_min_priority: 'major', story_point_budget: 3 }],
+      },
+    },
+  }, async (req, reply) => {
     const {
       name,
       repo,
