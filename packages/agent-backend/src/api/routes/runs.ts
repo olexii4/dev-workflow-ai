@@ -18,6 +18,7 @@ import { getGraph } from '../../agent/graph.js';
 import { emitRunEvent } from '../ws/agentStream.js';
 import type { AgentRunRow, RunEventRow, FindingRow } from '../../db/schema.js';
 import type { State } from '../../agent/state.js';
+import { startRunSchema } from '../../constants/schemas.js';
 
 interface StartRunBody {
   project?: string; // optional when issueUrl is provided
@@ -276,7 +277,7 @@ export const runsRoutes: FastifyPluginAsync = async app => {
   // POST / — start a run
   // Accepts: { project, issueNumber?, forcePriority?, outputDir? }
   //       OR { issueUrl: "https://github.com/owner/repo/issues/N", forcePriority? }
-  app.post<{ Body: StartRunBody }>('/', { schema: { tags } }, async (req, reply) => {
+  app.post<{ Body: StartRunBody }>('/', { schema: { tags, body: startRunSchema } }, async (req, reply) => {
     const { issueUrl, forcePriority, outputDir } = req.body;
     let { project, issueNumber } = req.body;
 

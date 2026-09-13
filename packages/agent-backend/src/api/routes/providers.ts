@@ -14,6 +14,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { HumanMessage } from '@langchain/core/messages';
 import { db } from '../../db/client.js';
 import { buildLLMFromDB, buildLLMFromProvider, buildEnvLLM } from '../../llm/client.js';
+import { providerTestSchema } from '../../constants/schemas.js';
 
 interface ProviderRow {
   id: number;
@@ -198,7 +199,7 @@ export const providersRoutes: FastifyPluginAsync = async app => {
   });
 
   // POST /test — send a prompt to the specified or active provider
-  app.post<{ Body: { prompt: string; provider_id?: string } }>('/test', { schema: { tags } }, async (req, reply) => {
+  app.post<{ Body: { prompt: string; provider_id?: string } }>('/test', { schema: { tags, body: providerTestSchema } }, async (req, reply) => {
     const { prompt, provider_id } = req.body;
     if (!prompt?.trim()) {
       return reply.status(400).send({ error: 'prompt is required' });
