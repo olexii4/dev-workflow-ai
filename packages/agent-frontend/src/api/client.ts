@@ -261,8 +261,6 @@ export interface AppSettings {
   defaultMinPriority: string;
   defaultBudget: string;
   cloneDir: string;
-  ollamaModel: string;
-  ollamaUrl: string;
   [key: string]: string;
 }
 
@@ -287,7 +285,6 @@ export const getSettings = () => apiFetch<AppSettings>('/settings');
 export const saveSettings = (body: Partial<AppSettings>) =>
   apiFetch<{ ok: boolean }>('/settings', { method: 'PUT', body: JSON.stringify(body) });
 export const getSamplePacks = () => apiFetch<SamplePack[]>('/settings/samples');
-export const getOllamaModels = () => apiFetch<{ models: string[] }>('/settings/ollama-models');
 export const loadSamplePack = (name: string) =>
   apiFetch<LoadResult>(`/settings/samples/${name}/load`, { method: 'POST' });
 export const exportKnowledge = () => {

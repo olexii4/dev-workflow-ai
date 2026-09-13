@@ -135,18 +135,6 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
     });
   });
 
-  // GET /api/settings/ollama-models — list models available in the local Ollama instance
-  app.get('/ollama-models', { schema: { tags } }, async (_req, reply) => {
-    const ollamaUrl = await getSetting('ollamaUrl', process.env.OLLAMA_BASE_URL ?? 'http://ollama:11434');
-    try {
-      const res = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
-      if (!res.ok) return reply.send({ models: [] });
-      const data = (await res.json()) as { models?: { name: string }[] };
-      return reply.send({ models: (data.models ?? []).map(m => m.name) });
-    } catch {
-      return reply.send({ models: [] });
-    }
-  });
 
   // GET /api/settings/export — export all contexts as JSON
   app.get('/export', { schema: { tags } }, async (_req, reply) => {

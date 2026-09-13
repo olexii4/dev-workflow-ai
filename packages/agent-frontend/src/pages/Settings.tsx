@@ -66,7 +66,6 @@ import {
   SamplePack,
   deleteProvider,
   exportKnowledge,
-  getOllamaModels,
   getProviders,
   getSettings,
   getSamplePacks,
@@ -197,14 +196,7 @@ function AIProviders({ pendingActiveId, onPendingActiveChange, reloadKey }: AIPr
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [addModelOpen, setAddModelOpen] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [liveOllamaModels, setLiveOllamaModels] = useState<string[]>([]);
 
-  // Fetch installed Ollama models when Ollama is selected
-  useEffect(() => {
-    if (addForm.provider_id === 'ollama') {
-      getOllamaModels().then(r => setLiveOllamaModels(r.models)).catch(() => {});
-    }
-  }, [addForm.provider_id]);
 
   // Edit modal
   const [editTarget, setEditTarget] = useState<LLMProvider | null>(null);
@@ -569,9 +561,7 @@ function AIProviders({ pendingActiveId, onPendingActiveChange, reloadKey }: AIPr
             )}
             {addForm.provider_id && (() => {
               const staticModels = PROVIDER_MODELS[addForm.provider_id] ?? [];
-              const knownModels = addForm.provider_id === 'ollama' && liveOllamaModels.length > 0
-                ? liveOllamaModels
-                : staticModels;
+              const knownModels = staticModels;
               const isKnown = knownModels.includes(addForm.model);
               return (
                 <FormGroup label="Model" fieldId="add-prov-model">
@@ -771,16 +761,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultMinPriority: 'major',
   defaultBudget: '3',
   cloneDir: '.repos',
-  ollamaModel: 'qwen2.5-coder:7b',
-  ollamaUrl: 'http://ollama:11434',
 };
 
 export default function Settings() {
   const [saved, setSaved] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [priorityOpen, setPriorityOpen] = useState(false);
-  const [ollamaModelOpen, setOllamaModelOpen] = useState(false);
-  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
 
   // Active provider — pending (UI) vs saved (DB)
   const [pendingActiveId, setPendingActiveId] = useState<string | null>(null);
@@ -792,7 +778,6 @@ export default function Settings() {
 
   useEffect(() => {
     getSettings().then(s => { setSaved(s); setSettings(s); }).catch(() => {});
-    getOllamaModels().then(r => setOllamaModels(r.models)).catch(() => {});
     // Load current active provider from DB
     getProviders().then(providers => {
       const active = providers.find(p => p.is_active);
