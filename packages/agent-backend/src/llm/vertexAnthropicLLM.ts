@@ -18,7 +18,7 @@
 // Env vars:
 //   ANTHROPIC_VERTEX_PROJECT_ID  — GCP project ID (required)
 //   CLOUD_ML_REGION              — Vertex AI region (default: us-east5)
-//   VERTEX_CLAUDE_MODEL          — model ID (default: claude-sonnet-4-5@20250929)
+//   VERTEX_CLAUDE_MODEL          — model ID (default: claude-sonnet-4-6@default)
 //   GOOGLE_APPLICATION_CREDENTIALS_JSON — service account JSON string (inline)
 //   GOOGLE_APPLICATION_CREDENTIALS      — path to service account JSON file (file-based)
 
@@ -231,7 +231,7 @@ export class VertexAnthropicLLM extends BaseChatModel {
     super({});
     this.projectId = opts.projectId;
     this.region = opts.region ?? 'global';
-    this.model = opts.model ?? 'claude-sonnet-4-5@20250929';
+    this.model = opts.model ?? 'claude-sonnet-4-6@default';
     this.maxTokens = opts.maxTokens ?? 8192;
     this.auth = new GoogleAuth({
       credentials: opts.credentials,
@@ -347,7 +347,7 @@ export function buildVertexAnthropicLLM(opts?: {
   return new VertexAnthropicLLM({
     projectId,
     region: process.env.CLOUD_ML_REGION ?? 'global',
-    model: opts?.model ?? process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-5@20250929',
+    model: opts?.model ?? process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-6@default',
     maxTokens: opts?.maxTokens ?? 8192,
     credentials: loadCredentials(),
   });

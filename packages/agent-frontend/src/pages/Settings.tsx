@@ -83,7 +83,7 @@ import {
 const PRIORITIES = ['critical', 'major', 'minor', 'trivial'];
 
 const PROVIDER_DEFAULT_MODEL: Record<string, string> = {
-  vertex:    'claude-sonnet-4-5@20250929',
+  vertex:    'claude-sonnet-4-6@default',
   anthropic: 'claude-sonnet-4-6',
   openai:    'gpt-4o',
   gemini:    'gemini-3.6-flash',
@@ -92,11 +92,11 @@ const PROVIDER_DEFAULT_MODEL: Record<string, string> = {
 
 const PROVIDER_MODELS: Record<string, string[]> = {
   vertex: [
+    'claude-sonnet-4-6@default',
+    'claude-opus-4-6@default',
     'claude-sonnet-4-5@20250929',
     'claude-haiku-4-5@20251001',
     'claude-opus-4-5@20251101',
-    'claude-sonnet-4-6@default',
-    'claude-opus-4-6@default',
   ],
   anthropic: [
     'claude-sonnet-4-6',
@@ -473,7 +473,7 @@ function AIProviders({ pendingActiveId, onPendingActiveChange, reloadKey }: AIPr
                   }
                 }}
               >
-                {healthChecking ? <><Spinner size="sm" /> Checking…</> : '⚡ Check all providers'}
+                {healthChecking ? <><Spinner size="sm" /> Checking…</> : 'Check all providers'}
               </Button>
             </FlexItem>
           </Flex>
@@ -580,32 +580,29 @@ function AIProviders({ pendingActiveId, onPendingActiveChange, reloadKey }: AIPr
                       <Select
                         id="add-prov-model-select"
                         isOpen={addModelOpen}
-                        selected={isKnown ? addForm.model : 'custom'}
+                        selected={isKnown ? addForm.model : undefined}
                         onSelect={(_e, val) => {
-                          if (String(val) !== 'custom') setAddForm(f => ({ ...f, model: String(val) }));
+                          setAddForm(f => ({ ...f, model: String(val) }));
                           setAddModelOpen(false);
                         }}
                         onOpenChange={setAddModelOpen}
                         toggle={ref => (
                           <MenuToggle ref={ref} onClick={() => setAddModelOpen(o => !o)} isExpanded={addModelOpen} style={{ minWidth: '260px' }}>
-                            {isKnown ? addForm.model : (addForm.model || 'Select model…')}
+                            {addForm.model || 'Select model…'}
                           </MenuToggle>
                         )}
                       >
                         <SelectList>
                           {knownModels.map(m => <SelectOption key={m} value={m}>{m}</SelectOption>)}
-                          <SelectOption key="custom" value="custom">Custom…</SelectOption>
                         </SelectList>
                       </Select>
-                      {(!isKnown || addForm.model === '') && (
-                        <TextInput
-                          id="add-prov-model"
-                          value={addForm.model}
-                          onChange={(_e, v) => setAddForm(f => ({ ...f, model: v }))}
-                          placeholder="Enter model name"
-                          style={{ marginTop: '6px' }}
-                        />
-                      )}
+                      <TextInput
+                        id="add-prov-model"
+                        value={addForm.model}
+                        onChange={(_e, v) => setAddForm(f => ({ ...f, model: v }))}
+                        placeholder="Or type a custom model ID"
+                        style={{ marginTop: '6px' }}
+                      />
                     </>
                   ) : (
                     <TextInput id="add-prov-model" value={addForm.model}

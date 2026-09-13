@@ -83,14 +83,6 @@ export const settingsRoutes: FastifyPluginAsync = async app => {
       defaultMinPriority: await getSetting('defaultMinPriority', 'major'),
       defaultBudget: await getSetting('defaultBudget', '3'),
       cloneDir: await getSetting('cloneDir', process.env.WORKSPACE_DIR ?? '.repos'),
-      ollamaModel: await getSetting(
-        'ollamaModel',
-        process.env.OLLAMA_MODEL ?? 'qwen2.5-coder:32b-q8_0',
-      ),
-      ollamaUrl: await getSetting(
-        'ollamaUrl',
-        process.env.OLLAMA_BASE_URL ?? 'http://ollama:11434',
-      ),
       ...result,
     });
   });

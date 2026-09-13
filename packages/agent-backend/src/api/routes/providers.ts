@@ -37,7 +37,7 @@ export async function seedDefaultProviders(): Promise<void> {
 
   const vertexProjectIdNow = process.env.ANTHROPIC_VERTEX_PROJECT_ID;
   const vertexRegionNow = process.env.CLOUD_ML_REGION ?? 'global';
-  const vertexModelNow = process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-5@20250929';
+  const vertexModelNow = process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-6@default';
 
   // Keep vertex project ID up to date from env; preserve model/region set by the user
   if (hasRows && vertexProjectIdNow) {
@@ -91,7 +91,7 @@ export async function seedDefaultProviders(): Promise<void> {
 
   const vertexProjectId = process.env.ANTHROPIC_VERTEX_PROJECT_ID;
   const vertexRegion = process.env.CLOUD_ML_REGION ?? 'global';
-  const vertexModel = process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-5@20250929';
+  const vertexModel = process.env.VERTEX_CLAUDE_MODEL ?? 'claude-sonnet-4-6@default';
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY ?? '';
   const geminiKey    = (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) ?? '';
