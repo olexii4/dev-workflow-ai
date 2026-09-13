@@ -191,7 +191,17 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
   });
 
   // POST /:name/update — clone or pull the repo, update local_path in DB
-  app.post<{ Params: { name: string } }>('/:name/update', { schema: { tags } }, async (req, reply) => {
+  app.post<{ Params: { name: string }; Body: { localPath?: string } }>('/:name/update', {
+    schema: {
+      tags,
+      body: {
+        type: 'object',
+        properties: {
+          localPath: { type: 'string', description: 'Override clone directory (default: from settings)' },
+        },
+      },
+    },
+  }, async (req, reply) => {
     const { name } = req.params;
     const { rows } = await db.query<ProjectRow>('SELECT * FROM projects WHERE name = $1', [name]);
     if (!rows[0]) return reply.status(404).send({ error: 'Project not found' });
@@ -200,7 +210,7 @@ export const projectsRoutes: FastifyPluginAsync = async app => {
     if (!project.repo) return reply.status(400).send({ error: 'Project has no repo configured' });
 
     const cloneBase = await getCloneDir();
-    const targetPath = join(cloneBase, project.repo);
+    const targetPath = req.body?.localPath ?? join(cloneBase, project.repo);
 
     try {
       const actualPath = await gitCloneOrPull(project.repo, targetPath);
