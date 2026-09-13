@@ -383,7 +383,17 @@ export const sourcesRoutes: FastifyPluginAsync = async app => {
 
   // POST /api/sources/issues/import — fetch a single GitHub or Jira issue by URL,
   //   auto-create its source if needed, store in DB, return the stored issue row.
-  app.post<{ Body: { url: string } }>('/issues/import', { schema: { tags } }, async (req, reply) => {
+  app.post<{ Body: { url: string } }>('/issues/import', {
+    schema: {
+      tags,
+      body: {
+        type: 'object',
+        required: ['url'],
+        properties: { url: { type: 'string' } },
+        examples: [{ url: 'https://github.com/eclipse-che/che-dashboard/issues/1234' }],
+      },
+    },
+  }, async (req, reply) => {
     const { url } = req.body;
     if (!url?.trim()) return reply.status(400).send({ error: 'url is required' });
 
